@@ -114,12 +114,6 @@ async function ensureDataDir() {
   const libPath = await getActiveLibraryPath();
   const assetsDir = path.join(libPath, 'assets');
   await fs.mkdir(assetsDir, { recursive: true });
-  const catalogPath = path.join(libPath, 'catalog.json');
-  try {
-    await fs.access(catalogPath);
-  } catch {
-    await fs.writeFile(catalogPath, JSON.stringify({ assets: [] }, null, 2));
-  }
   return dir;
 }
 
@@ -323,35 +317,10 @@ ipcMain.handle('add-asset', async (event, { buffer, filename }) => {
     };
     await fs.writeFile(path.join(assetDir, 'metadata.json'), JSON.stringify(metadata, null, 2));
 
-    const catalogPath = path.join(await getActiveLibraryPath(), 'catalog.json');
-    let catalog = { assets: [] };
-    try {
-      const data = await fs.readFile(catalogPath, 'utf-8');
-      catalog = JSON.parse(data);
-    } catch {}
-    catalog.assets.push({ id: assetId, name: filename, type: metadata.type });
-    await fs.writeFile(catalogPath, JSON.stringify(catalog, null, 2));
-
     return { assetId, savedName, originalName: filename, type: metadata.type, width, height };
   } catch (err) {
     console.error('add-asset error:', err);
     throw err;
-  }
-});
-
-ipcMain.handle('get-assets', async () => {
-  try {
-    await ensureDataDir();
-    const catalogPath = path.join(await getActiveLibraryPath(), 'catalog.json');
-    try {
-      const data = await fs.readFile(catalogPath, 'utf-8');
-      return JSON.parse(data);
-    } catch {
-      return { assets: [] };
-    }
-  } catch (err) {
-    console.error('get-assets error:', err);
-    return { assets: [] };
   }
 });
 
@@ -519,14 +488,6 @@ ipcMain.handle('delete-item-state', async (event, assetId) => {
       await fs.access(assetDir);
       await fs.rm(assetDir, { recursive: true, force: true });
     } catch {}
-
-    const catalogPath = path.join(libPath, 'catalog.json');
-    try {
-      const data = await fs.readFile(catalogPath, 'utf-8');
-      let catalog = JSON.parse(data);
-      catalog.assets = catalog.assets.filter(a => a.id !== assetId);
-      await fs.writeFile(catalogPath, JSON.stringify(catalog, null, 2));
-    } catch {}
   } catch (err) {
     console.error('delete-item-state error:', err);
   }
@@ -653,8 +614,6 @@ ipcMain.handle('create-library', async (event) => {
   await fs.mkdir(libPath, { recursive: true });
   const assetsDir = path.join(libPath, 'assets');
   await fs.mkdir(assetsDir, { recursive: true });
-  const catalogPath = path.join(libPath, 'catalog.json');
-  await fs.writeFile(catalogPath, JSON.stringify({ assets: [] }, null, 2));
   return libPath;
 });
 
