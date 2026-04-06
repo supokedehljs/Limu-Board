@@ -91,18 +91,58 @@
     }
 
     #toolbar {
+      display: none;
+    }
+
+    #leftToolbar {
       position: fixed;
       top: 36px;
       left: 0;
-      right: 0;
-      height: 44px;
+      width: 50px;
       background: #2d2d2d;
-      border-bottom: 1px solid #404040;
+      border-right: 1px solid #404040;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 8px 0;
+      gap: 4px;
+      z-index: 1000;
+    }
+
+    .tool-icon-btn {
+      width: 36px;
+      height: 36px;
+      border: none;
+      background: transparent;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 20px;
+      color: #aaa;
       display: flex;
       align-items: center;
-      padding: 0 16px;
-      gap: 8px;
-      z-index: 1000;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+
+    .tool-icon-btn:hover {
+      background: #3a3a3a;
+      color: #fff;
+    }
+
+    .tool-icon-btn:active {
+      background: #4a4a4a;
+    }
+
+    .tool-icon-btn.active {
+      background: #4a90d9;
+      color: #fff;
+    }
+
+    .tool-separator {
+      width: 28px;
+      height: 1px;
+      background: #404040;
+      margin: 4px 0;
     }
 
     .tool-btn {
@@ -134,8 +174,8 @@
 
     #canvas-container {
       position: fixed;
-      top: 80px;
-      left: 0;
+      top: 36px;
+      left: 50px;
       right: 0;
       bottom: 0;
       overflow: hidden;
@@ -984,22 +1024,21 @@
     </div>
   </div>
 
-  <div id="toolbar">
-    <button class="tool-btn" onclick="toggleTodoPanel()">待办</button>
-    <button class="tool-btn hidden" onclick="addFile()">添加文件</button>
-    <button class="tool-btn hidden" onclick="testClipboard()">测试粘贴</button>
-    <button class="tool-btn hidden" onclick="deleteSelected()">删除</button>
-    <button class="tool-btn hidden" onclick="undoAction()">撤销</button>
-    <button class="tool-btn hidden" onclick="clearAll()">清空</button>
-    <div class="separator"></div>
-    <button class="tool-btn" onclick="zoomOut()">缩小</button>
-    <span id="zoomLevel" style="font-size:12px;color:#999;min-width:45px;text-align:center;">100%</span>
-    <button class="tool-btn" onclick="zoomIn()">放大</button>
-    <button class="tool-btn" onclick="resetView()">重置</button>
-    <div class="separator"></div>
-    <button class="tool-btn" onclick="togglePropPanel()">属性</button>
-    <button class="tool-btn" onclick="toggleSettings()">素材库</button>
-    <button class="tool-btn" onclick="toggleAppSettings()">设置</button>
+  <div id="leftToolbar">
+    <button class="tool-icon-btn" onclick="toggleTodoPanel()" title="待办列表">📋</button>
+    <button class="tool-icon-btn hidden" onclick="addFile()" title="添加文件">📎</button>
+    <button class="tool-icon-btn hidden" onclick="testClipboard()" title="粘贴">📋</button>
+    <button class="tool-icon-btn hidden" onclick="deleteSelected()" title="删除">🗑</button>
+    <button class="tool-icon-btn hidden" onclick="undoAction()" title="撤销">↩</button>
+    <button class="tool-icon-btn hidden" onclick="clearAll()" title="清空">🗑</button>
+    <div class="tool-separator"></div>
+    <button class="tool-icon-btn" onclick="zoomOut()" title="缩小">➖</button>
+    <button class="tool-icon-btn" onclick="zoomIn()" title="放大">➕</button>
+    <button class="tool-icon-btn" onclick="resetView()" title="重置视图">↺</button>
+    <div class="tool-separator"></div>
+    <button class="tool-icon-btn" onclick="togglePropPanel()" title="属性">ℹ</button>
+    <button class="tool-icon-btn" onclick="toggleSettings()" title="素材库">📁</button>
+    <button class="tool-icon-btn" onclick="toggleAppSettings()" title="设置">⚙</button>
   </div>
 
   <div id="canvas-container">
@@ -2473,7 +2512,7 @@
     function startBoxSelect(e) {
       if (e.button !== 0 || e.ctrlKey || e.metaKey) return;
       if (e.target.closest('.image-item') || e.target.closest('.file-item') || e.target.closest('#selectionBox')) return;
-      if (e.target.closest('#toolbar') || e.target.closest('#titlebar') || e.target.closest('#status-bar')) return;
+      if (e.target.closest('#toolbar') || e.target.closest('#leftToolbar') || e.target.closest('#titlebar') || e.target.closest('#status-bar')) return;
       if (e.target.closest('#settingsPanel') || e.target.closest('#appSettingsPanel') || e.target.closest('#todoPanel') || e.target.closest('#propPanel')) return;
       e.preventDefault();
       isBoxSelecting = true;
