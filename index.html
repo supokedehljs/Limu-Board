@@ -1891,43 +1891,48 @@
       const loadingEl = document.getElementById('loadingOverlay');
       loadingEl.classList.remove('hidden');
 
-      await window.whiteboardAPI.ensureDataDir();
-      const settings = await window.whiteboardAPI.getSettings();
-      window._appSettings = settings;
-      document.getElementById('globalHotkeyDisplay').textContent = settings.globalHotkey || 'Alt+W';
-      document.getElementById('deleteHotkeyDisplay').textContent = settings.localHotkeys?.delete || 'Delete';
-      document.getElementById('resetViewHotkeyDisplay').textContent = settings.localHotkeys?.resetView || '0';
-      document.getElementById('setThumbHotkeyDisplay').textContent = settings.localHotkeys?.setThumb || 'Alt+T';
-      setupDeleteKeyBinding(settings.localHotkeys?.delete || 'Delete');
-      setupResetViewKeyBinding(settings.localHotkeys?.resetView || '0');
-      setupSetThumbKeyBinding(settings.localHotkeys?.setThumb || 'Alt+T');
+      try {
+        await window.whiteboardAPI.ensureDataDir();
+        const settings = await window.whiteboardAPI.getSettings();
+        window._appSettings = settings;
+        document.getElementById('globalHotkeyDisplay').textContent = settings.globalHotkey || 'Alt+W';
+        document.getElementById('deleteHotkeyDisplay').textContent = settings.localHotkeys?.delete || 'Delete';
+        document.getElementById('resetViewHotkeyDisplay').textContent = settings.localHotkeys?.resetView || '0';
+        document.getElementById('setThumbHotkeyDisplay').textContent = settings.localHotkeys?.setThumb || 'Alt+T';
+        setupDeleteKeyBinding(settings.localHotkeys?.delete || 'Delete');
+        setupResetViewKeyBinding(settings.localHotkeys?.resetView || '0');
+        setupSetThumbKeyBinding(settings.localHotkeys?.setThumb || 'Alt+T');
 
-      const state = await window.whiteboardAPI.readState();
+        const state = await window.whiteboardAPI.readState();
 
-      currentZoom = state.zoom || 1;
-      panX = state.panX || 0;
-      panY = state.panY || 0;
-      items = state.items || [];
-      itemIdCounter = items.length + 1;
+        currentZoom = state.zoom || 1;
+        panX = state.panX || 0;
+        panY = state.panY || 0;
+        items = state.items || [];
+        itemIdCounter = items.length + 1;
 
-      items.forEach(item => {
-        if (!item.timerTotal) item.timerTotal = 0;
-        if (!item.timerRunning) item.timerRunning = false;
-        if (item.timerStartedAt && !item.timerRunning) item.timerStartedAt = null;
-      });
+        items.forEach(item => {
+          if (!item.timerTotal) item.timerTotal = 0;
+          if (!item.timerRunning) item.timerRunning = false;
+          if (item.timerStartedAt && !item.timerRunning) item.timerStartedAt = null;
+        });
 
-      updateTransform();
-      updateZoomDisplay();
+        updateTransform();
+        updateZoomDisplay();
 
-      for (const item of items) {
-        if (item.type === 'image') {
-          await createImageElement(item);
-        } else {
-          await createFileElement(item);
+        for (const item of items) {
+          if (item.type === 'image') {
+            await createImageElement(item);
+          } else {
+            await createFileElement(item);
+          }
         }
+        updateItemCount();
+        startTimerUpdates();
+      } catch (err) {
+        console.error('Init error:', err);
+        alert('初始化错误: ' + err.message);
       }
-      updateItemCount();
-      startTimerUpdates();
 
       setTimeout(() => loadingEl.classList.add('hidden'), 300);
     }
@@ -2253,7 +2258,7 @@
 
       const timerBar = createTimerBar(item);
       container.appendChild(timerBar);
-      updateTimerDisplay(item.id);
+      updateTimerDisplay(item.assetId || item.id);
     }
 
     async function createFileElement(item) {
@@ -2267,7 +2272,7 @@
 
       const timerBar = createTimerBar(item);
       container.appendChild(timerBar);
-      updateTimerDisplay(item.id);
+      updateTimerDisplay(item.assetId || item.id);
     }
 
     function selectItem(item, addToSelection = false) {
