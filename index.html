@@ -262,6 +262,10 @@
       font-family: 'Consolas', monospace;
     }
 
+    .timer-display.running {
+      color: #e53935;
+    }
+
     .timer-btn {
       padding: 2px 8px;
       border: 1px solid #555;
@@ -289,19 +293,13 @@
     }
 
     .resize-handle {
-      position: absolute;
-      width: 10px;
-      height: 10px;
-      background: #4a90d9;
-      border: 1px solid #fff;
-      border-radius: 50%;
-      z-index: 10;
+      display: none;
     }
 
-    .resize-handle.se { bottom: -5px; right: -5px; cursor: se-resize; }
-    .resize-handle.sw { bottom: -5px; left: -5px; cursor: sw-resize; }
-    .resize-handle.ne { top: -5px; right: -5px; cursor: ne-resize; }
-    .resize-handle.nw { top: -5px; left: -5px; cursor: nw-resize; }
+    .resize-handle.se { display: none; }
+    .resize-handle.sw { display: none; }
+    .resize-handle.ne { display: none; }
+    .resize-handle.nw { display: none; }
 
     #hint {
       position: fixed;
@@ -1678,6 +1676,11 @@
       const timerEl = container.querySelector('.timer-display');
       if (timerEl) {
         timerEl.textContent = getItemTimerDisplay(item);
+        if (item.timerRunning) {
+          timerEl.classList.add('running');
+        } else {
+          timerEl.classList.remove('running');
+        }
       }
       const btnEl = container.querySelector('.timer-btn');
       if (btnEl) {
