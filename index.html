@@ -97,8 +97,9 @@
     #leftToolbar {
       position: fixed;
       top: 36px;
+      bottom: 24px;
       left: 0;
-      width: 50px;
+      width: 40px;
       background: #2d2d2d;
       border-right: 1px solid #404040;
       display: flex;
@@ -107,21 +108,27 @@
       padding: 8px 0;
       gap: 4px;
       z-index: 1000;
+      overflow-y: auto;
     }
 
     .tool-icon-btn {
-      width: 36px;
-      height: 36px;
+      width: 32px;
+      height: 32px;
       border: none;
       background: transparent;
       border-radius: 6px;
       cursor: pointer;
-      font-size: 20px;
+      font-size: 18px;
       color: #aaa;
       display: flex;
       align-items: center;
       justify-content: center;
       transition: all 0.15s;
+    }
+
+    .tool-icon-btn svg {
+      width: 18px;
+      height: 18px;
     }
 
     .tool-icon-btn:hover {
