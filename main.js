@@ -511,9 +511,22 @@ ipcMain.handle('save-item-state', async (event, item) => {
 
 ipcMain.handle('delete-item-state', async (event, assetId) => {
   try {
-    const assetsPath = path.join(await getActiveLibraryPath(), 'assets');
-    const metadataPath = path.join(assetsPath, assetId, 'metadata.json');
-    await fs.unlink(metadataPath);
+    const libPath = await getActiveLibraryPath();
+    const assetsPath = path.join(libPath, 'assets');
+    const assetDir = path.join(assetsPath, assetId);
+    
+    try {
+      await fs.access(assetDir);
+      await fs.rm(assetDir, { recursive: true, force: true });
+    } catch {}
+
+    const catalogPath = path.join(libPath, 'catalog.json');
+    try {
+      const data = await fs.readFile(catalogPath, 'utf-8');
+      let catalog = JSON.parse(data);
+      catalog.assets = catalog.assets.filter(a => a.id !== assetId);
+      await fs.writeFile(catalogPath, JSON.stringify(catalog, null, 2));
+    } catch {}
   } catch (err) {
     console.error('delete-item-state error:', err);
   }
