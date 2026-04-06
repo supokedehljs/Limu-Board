@@ -2421,9 +2421,10 @@
         return { ...item };
       });
       pushUndo({ type: 'delete', items: deletedItems });
-      idsToDelete.forEach(id => {
+      idsToDelete.forEach(async id => {
         const el = whiteboard.querySelector(`[data-id="${id}"]`);
         if (el) el.remove();
+        await window.whiteboardAPI.deleteItemState(id);
       });
       items = items.filter(i => !idsToDelete.includes(i.assetId || i.id));
       clearSelection();

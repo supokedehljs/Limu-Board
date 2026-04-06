@@ -509,6 +509,16 @@ ipcMain.handle('save-item-state', async (event, item) => {
   }
 });
 
+ipcMain.handle('delete-item-state', async (event, assetId) => {
+  try {
+    const assetsPath = path.join(await getActiveLibraryPath(), 'assets');
+    const metadataPath = path.join(assetsPath, assetId, 'metadata.json');
+    await fs.unlink(metadataPath);
+  } catch (err) {
+    console.error('delete-item-state error:', err);
+  }
+});
+
 ipcMain.handle('open-file', async (event, assetId) => {
     try {
       const activeLibraryPath = await getActiveLibraryPath();

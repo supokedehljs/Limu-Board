@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld('whiteboardAPI', {
   readState: () => ipcRenderer.invoke('read-state'),
   writeState: (state) => ipcRenderer.invoke('write-state', state),
   saveItemState: (item) => ipcRenderer.invoke('save-item-state', item),
+  deleteItemState: (assetId) => ipcRenderer.invoke('delete-item-state', assetId),
   openFile: (assetId) => ipcRenderer.invoke('open-file', assetId),
   getFileIcon: (filename) => ipcRenderer.invoke('get-file-icon', filename),
   windowMinimize: () => ipcRenderer.invoke('window-minimize'),
