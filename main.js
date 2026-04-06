@@ -632,9 +632,22 @@ ipcMain.handle('remove-library', async (event, libId) => {
   return true;
 });
 
-ipcMain.handle('show-card-context-menu', async (event, { assetId, originalName, itemType }) => {
+ipcMain.handle('show-card-context-menu', async (event, { id, assetId, originalName, itemType }) => {
   const menu = new Menu();
-    menu.append(new MenuItem({
+  menu.append(new MenuItem({
+    label: '添加时间',
+    click: () => {
+      event.sender.send('timer-action', { type: 'add', itemId: id });
+    }
+  }));
+  menu.append(new MenuItem({
+    label: '设置时间',
+    click: () => {
+      event.sender.send('timer-action', { type: 'set', itemId: id });
+    }
+  }));
+  menu.append(new MenuItem({ type: 'separator' }));
+  menu.append(new MenuItem({
       label: '在文件浏览器中查看',
       click: async () => {
         const assetsPath = await getAssetsPath();

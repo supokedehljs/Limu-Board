@@ -26,10 +26,13 @@ contextBridge.exposeInMainWorld('whiteboardAPI', {
   setActiveLibrary: (libId) => ipcRenderer.invoke('set-active-library', libId),
   removeLibrary: (libId) => ipcRenderer.invoke('remove-library', libId),
   showCardContextMenu: (data) => ipcRenderer.invoke('show-card-context-menu', data),
+  addTimer: (itemId, hours, minutes) => ipcRenderer.invoke('add-timer', { itemId, hours, minutes }),
+  setTimer: (itemId, hours, minutes) => ipcRenderer.invoke('set-timer', { itemId, hours, minutes }),
   onLibraryChanged: (callback) => ipcRenderer.on('library-changed', (e, libId) => callback(libId)),
   getSettings: () => ipcRenderer.invoke('get-settings'),
   saveSettings: (settings) => ipcRenderer.invoke('save-settings', settings),
   windowShow: () => ipcRenderer.invoke('window-show'),
   windowHide: () => ipcRenderer.invoke('window-hide'),
-  setCardThumbnail: (assetId, buffer) => ipcRenderer.invoke('set-card-thumbnail', { assetId, buffer })
+  setCardThumbnail: (assetId, buffer) => ipcRenderer.invoke('set-card-thumbnail', { assetId, buffer }),
+  onTimerAction: (callback) => ipcRenderer.on('timer-action', (e, data) => callback(data))
 });
