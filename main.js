@@ -237,6 +237,10 @@ ipcMain.handle('window-is-maximized', () => {
   return mainWindow.isMaximized();
 });
 
+ipcMain.handle('window-unmaximize', () => {
+  mainWindow.unmaximize();
+});
+
 ipcMain.handle('window-show', () => {
   if (!mainWindow.isVisible()) {
     mainWindow.show();

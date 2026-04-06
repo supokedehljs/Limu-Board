@@ -1174,6 +1174,16 @@
           <button class="hotkey-reset" onclick="resetSetThumbHotkey()">重置</button>
         </div>
       </div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-row-label">最大化/还原</div>
+          <div class="settings-row-desc">切换窗口最大化状态</div>
+        </div>
+        <div class="hotkey-input">
+          <div class="hotkey-display" id="maximizeHotkeyDisplay" tabindex="0">Ctrl+F</div>
+          <button class="hotkey-reset" onclick="resetMaximizeHotkey()">重置</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1537,10 +1547,12 @@
       const deleteHotkeyEl = document.getElementById('deleteHotkeyDisplay');
       const resetViewHotkeyEl = document.getElementById('resetViewHotkeyDisplay');
       const setThumbHotkeyEl = document.getElementById('setThumbHotkeyDisplay');
+      const maximizeHotkeyEl = document.getElementById('maximizeHotkeyDisplay');
       if (globalHotkeyEl) globalHotkeyEl.textContent = settings.globalHotkey || '未设置';
       if (deleteHotkeyEl) deleteHotkeyEl.textContent = settings.localHotkeys?.delete || 'Delete';
       if (resetViewHotkeyEl) resetViewHotkeyEl.textContent = settings.localHotkeys?.resetView || '0';
       if (setThumbHotkeyEl) setThumbHotkeyEl.textContent = settings.localHotkeys?.setThumb || 'Ctrl+Shift+T';
+      if (maximizeHotkeyEl) maximizeHotkeyEl.textContent = settings.localHotkeys?.maximize || 'Ctrl+F';
     }
 
     function setupHotkeyInput(elementId, settingKey, callback) {
@@ -1713,6 +1725,32 @@
       document.addEventListener('keydown', window._setThumbKeyHandler);
     }
 
+    function setupMaximizeKeyBinding(key) {
+      document.removeEventListener('keydown', window._maximizeKeyHandler);
+      if (!key) return;
+      const parts = key.split('+').map(p => p.trim());
+      window._maximizeKeyHandler = (e) => {
+        const wantCtrl = parts.includes('Ctrl');
+        const wantShift = parts.includes('Shift');
+        const wantAlt = parts.includes('Alt');
+        const mainKey = parts.find(p => !['Ctrl', 'Shift', 'Alt', 'Meta'].includes(p));
+        if (e.ctrlKey === wantCtrl && e.shiftKey === wantShift && e.altKey === wantAlt && e.key === mainKey && document.activeElement === document.body) {
+          e.preventDefault();
+          toggleWindowMaximize();
+        }
+      };
+      document.addEventListener('keydown', window._maximizeKeyHandler);
+    }
+
+    async function toggleWindowMaximize() {
+      const isMax = await window.whiteboardAPI.windowIsMaximized();
+      if (isMax) {
+        await window.whiteboardAPI.windowUnmaximize();
+      } else {
+        await window.whiteboardAPI.windowMaximize();
+      }
+    }
+
     setupHotkeyInput('globalHotkeyDisplay', 'globalHotkey', (value) => {
       saveHotkeySetting('globalHotkey', value);
     });
@@ -1731,6 +1769,21 @@
       saveHotkeySetting('setThumb', value);
       setupSetThumbKeyBinding(value);
     });
+
+    setupHotkeyInput('maximizeHotkeyDisplay', 'maximize', (value) => {
+      saveHotkeySetting('maximize', value);
+      setupMaximizeKeyBinding(value);
+    });
+
+    function resetSetThumbHotkey() {
+      saveHotkeySetting('setThumb', 'Alt+T');
+      setupSetThumbKeyBinding('Alt+T');
+    }
+
+    function resetMaximizeHotkey() {
+      saveHotkeySetting('maximize', 'Ctrl+F');
+      setupMaximizeKeyBinding('Ctrl+F');
+    }
 
     function formatTime(ms) {
       const totalSec = Math.floor(ms / 1000);
@@ -1941,15 +1994,18 @@
         const deleteHotkeyEl = document.getElementById('deleteHotkeyDisplay');
         const resetViewHotkeyEl = document.getElementById('resetViewHotkeyDisplay');
         const setThumbHotkeyEl = document.getElementById('setThumbHotkeyDisplay');
+        const maximizeHotkeyEl = document.getElementById('maximizeHotkeyDisplay');
 
         if (globalHotkeyEl) globalHotkeyEl.textContent = settings.globalHotkey || 'Alt+W';
         if (deleteHotkeyEl) deleteHotkeyEl.textContent = settings.localHotkeys?.delete || 'Delete';
         if (resetViewHotkeyEl) resetViewHotkeyEl.textContent = settings.localHotkeys?.resetView || '0';
         if (setThumbHotkeyEl) setThumbHotkeyEl.textContent = settings.localHotkeys?.setThumb || 'Alt+T';
+        if (maximizeHotkeyEl) maximizeHotkeyEl.textContent = settings.localHotkeys?.maximize || 'Ctrl+F';
 
         setupDeleteKeyBinding(settings.localHotkeys?.delete || 'Delete');
         setupResetViewKeyBinding(settings.localHotkeys?.resetView || '0');
         setupSetThumbKeyBinding(settings.localHotkeys?.setThumb || 'Alt+T');
+        setupMaximizeKeyBinding(settings.localHotkeys?.maximize || 'Ctrl+F');
 
         const state = await window.whiteboardAPI.readState();
 

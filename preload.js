@@ -15,6 +15,7 @@ contextBridge.exposeInMainWorld('whiteboardAPI', {
   getFileIcon: (filename) => ipcRenderer.invoke('get-file-icon', filename),
   windowMinimize: () => ipcRenderer.invoke('window-minimize'),
   windowMaximize: () => ipcRenderer.invoke('window-maximize'),
+  windowUnmaximize: () => ipcRenderer.invoke('window-unmaximize'),
   windowClose: () => ipcRenderer.invoke('window-close'),
   windowIsMaximized: () => ipcRenderer.invoke('window-is-maximized'),
   readClipboardImage: () => ipcRenderer.invoke('read-clipboard-image'),
