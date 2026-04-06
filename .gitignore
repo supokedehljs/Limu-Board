@@ -1,0 +1,6 @@
+node_modules/
+.whiteboard-data/
+electron/
+electron.zip
+dist/
+*.log
