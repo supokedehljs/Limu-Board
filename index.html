@@ -1733,18 +1733,15 @@
       const currentMinutes = Math.floor((currentMs % 3600000) / 60000);
 
       const overlay = document.createElement('div');
+      overlay.id = 'timerDialog';
       overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;';
       overlay.addEventListener('click', (e) => {
         if (e.target === overlay) overlay.remove();
       });
 
       const dialog = document.createElement('div');
-      dialog.style.cssText = 'background:#2d2d2d;padding:20px;border-radius:8px;min-width:280px;box-shadow:0 4px 20px rgba(0,0,0,0.5);';
+      dialog.style.cssText = 'background:#2d2d2d;padding:20px;border-radius:8px;min-width:280px;box-shadow:0 4px 20px rgba(0,0,0,0.5);pointer-events:auto;';
       dialog.addEventListener('click', (e) => e.stopPropagation());
-      dialog.addEventListener('mousedown', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-      });
 
       const title = document.createElement('div');
       title.style.cssText = 'font-size:16px;font-weight:bold;color:#fff;margin-bottom:16px;';
@@ -1758,16 +1755,14 @@
       hourInput.min = '0';
       hourInput.max = '99';
       hourInput.value = type === 'set' ? currentHours : 0;
-      hourInput.style.cssText = 'width:50px;padding:6px;background:#1a1a1a;border:1px solid #444;border-radius:4px;color:#fff;font-size:14px;text-align:center;';
-      hourInput.placeholder = '时';
+      hourInput.style.cssText = 'width:50px;padding:6px;background:#1a1a1a;border:1px solid #444;border-radius:4px;color:#fff;font-size:14px;text-align:center;-webkit-user-select:text;user-select:text;outline:none;';
 
       const minuteInput = document.createElement('input');
       minuteInput.type = 'number';
       minuteInput.min = '0';
       minuteInput.max = '59';
       minuteInput.value = type === 'set' ? currentMinutes : 0;
-      minuteInput.style.cssText = 'width:50px;padding:6px;background:#1a1a1a;border:1px solid #444;border-radius:4px;color:#fff;font-size:14px;text-align:center;';
-      minuteInput.placeholder = '分';
+      minuteInput.style.cssText = 'width:50px;padding:6px;background:#1a1a1a;border:1px solid #444;border-radius:4px;color:#fff;font-size:14px;text-align:center;-webkit-user-select:text;user-select:text;outline:none;';
 
       row.innerHTML = '<span style="color:#999;font-size:14px;">时</span>';
       row.appendChild(hourInput);
@@ -2495,6 +2490,7 @@
 
     document.addEventListener('mousedown', (e) => {
       if (isBoxSelecting) return;
+      if (e.target.closest('#timerDialog') || e.target.closest('input[type="number"]')) return;
       const container = document.getElementById('canvas-container');
       const rect = container.getBoundingClientRect();
       if (e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) {
