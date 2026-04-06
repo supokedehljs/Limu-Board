@@ -1919,10 +1919,17 @@
         await window.whiteboardAPI.ensureDataDir();
         const settings = await window.whiteboardAPI.getSettings();
         window._appSettings = settings;
-        document.getElementById('globalHotkeyDisplay').textContent = settings.globalHotkey || 'Alt+W';
-        document.getElementById('deleteHotkeyDisplay').textContent = settings.localHotkeys?.delete || 'Delete';
-        document.getElementById('resetViewHotkeyDisplay').textContent = settings.localHotkeys?.resetView || '0';
-        document.getElementById('setThumbHotkeyDisplay').textContent = settings.localHotkeys?.setThumb || 'Alt+T';
+
+        const globalHotkeyEl = document.getElementById('globalHotkeyDisplay');
+        const deleteHotkeyEl = document.getElementById('deleteHotkeyDisplay');
+        const resetViewHotkeyEl = document.getElementById('resetViewHotkeyDisplay');
+        const setThumbHotkeyEl = document.getElementById('setThumbHotkeyDisplay');
+
+        if (globalHotkeyEl) globalHotkeyEl.textContent = settings.globalHotkey || 'Alt+W';
+        if (deleteHotkeyEl) deleteHotkeyEl.textContent = settings.localHotkeys?.delete || 'Delete';
+        if (resetViewHotkeyEl) resetViewHotkeyEl.textContent = settings.localHotkeys?.resetView || '0';
+        if (setThumbHotkeyEl) setThumbHotkeyEl.textContent = settings.localHotkeys?.setThumb || 'Alt+T';
+
         setupDeleteKeyBinding(settings.localHotkeys?.delete || 'Delete');
         setupResetViewKeyBinding(settings.localHotkeys?.resetView || '0');
         setupSetThumbKeyBinding(settings.localHotkeys?.setThumb || 'Alt+T');
