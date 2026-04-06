@@ -304,11 +304,21 @@ ipcMain.handle('add-asset', async (event, { buffer, filename }) => {
 
     const metadata = {
       id: assetId,
-      name: filename,
+      assetId: assetId,
+      originalName: filename,
+      cardName: '',
       type: isImage ? 'image' : 'file',
       size: Buffer.from(buffer).length,
       width,
       height,
+      x: 0,
+      y: 0,
+      timerTotal: 0,
+      timerRunning: false,
+      timerStartedAt: null,
+      cardTags: [],
+      cardAnnotation: '',
+      cardUrl: '',
       addedTime: Date.now()
     };
     await fs.writeFile(path.join(assetDir, 'metadata.json'), JSON.stringify(metadata, null, 2));
@@ -445,9 +455,22 @@ ipcMain.handle('save-file', async (event, { buffer, filename }) => {
 
 ipcMain.handle('read-state', async () => {
   try {
-    const statePath = await getStatePath();
-    const data = await fs.readFile(statePath, 'utf-8');
-    return JSON.parse(data);
+    const assetsPath = path.join(await getActiveLibraryPath(), 'assets');
+    await fs.mkdir(assetsPath, { recursive: true });
+    
+    const entries = await fs.readdir(assetsPath);
+    const items = [];
+    
+    for (const entry of entries) {
+      const metadataPath = path.join(assetsPath, entry, 'metadata.json');
+      try {
+        const metadataData = await fs.readFile(metadataPath, 'utf-8');
+        const metadata = JSON.parse(metadataData);
+        items.push(metadata);
+      } catch {}
+    }
+    
+    return { version: 1, zoom: 1, panX: 0, panY: 0, items };
   } catch {
     return { version: 1, zoom: 1, panX: 0, panY: 0, items: [] };
   }
@@ -455,12 +478,34 @@ ipcMain.handle('read-state', async () => {
 
 ipcMain.handle('write-state', async (event, state) => {
   try {
-    await ensureDataDir();
-    const statePath = await getStatePath();
-    await fs.writeFile(statePath, JSON.stringify(state, null, 2));
+    const assetsPath = path.join(await getActiveLibraryPath(), 'assets');
+    await fs.mkdir(assetsPath, { recursive: true });
+    
+    if (state.items && Array.isArray(state.items)) {
+      for (const item of state.items) {
+        const metadataPath = path.join(assetsPath, item.assetId || item.id, 'metadata.json');
+        try {
+          await fs.access(path.dirname(metadataPath));
+        } catch {
+          await fs.mkdir(path.dirname(metadataPath), { recursive: true });
+        }
+        await fs.writeFile(metadataPath, JSON.stringify(item, null, 2));
+      }
+    }
   } catch (err) {
     console.error('write-state error:', err);
     throw err;
+  }
+});
+
+ipcMain.handle('save-item-state', async (event, item) => {
+  try {
+    const assetsPath = path.join(await getActiveLibraryPath(), 'assets');
+    const metadataPath = path.join(assetsPath, item.assetId || item.id, 'metadata.json');
+    await fs.mkdir(path.dirname(metadataPath), { recursive: true });
+    await fs.writeFile(metadataPath, JSON.stringify(item, null, 2));
+  } catch (err) {
+    console.error('save-item-state error:', err);
   }
 });
 
@@ -637,13 +682,13 @@ ipcMain.handle('show-card-context-menu', async (event, { id, assetId, originalNa
   menu.append(new MenuItem({
     label: '添加时间',
     click: () => {
-      event.sender.send('timer-action', { type: 'add', itemId: id });
+      event.sender.send('timer-action', { type: 'add', itemId: assetId || id });
     }
   }));
   menu.append(new MenuItem({
     label: '设置时间',
     click: () => {
-      event.sender.send('timer-action', { type: 'set', itemId: id });
+      event.sender.send('timer-action', { type: 'set', itemId: assetId || id });
     }
   }));
   menu.append(new MenuItem({ type: 'separator' }));

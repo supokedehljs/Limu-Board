@@ -1235,7 +1235,7 @@
     }
 
     function renderPropPanel(itemId) {
-      const item = items.find(i => i.id === itemId);
+      const item = items.find(i => i.assetId === itemId || i.id === itemId);
       const contentEl = document.getElementById('propContent');
       if (!item) {
         contentEl.innerHTML = '<div class="prop-no-selection">选择卡片查看属性</div>';
@@ -1355,7 +1355,7 @@
 
     function addTag() {
       if (!selectedItem) return;
-      const item = items.find(i => i.id === selectedItem.dataset.id);
+      const item = items.find(i => i.assetId === selectedItem.dataset.id || i.id === selectedItem.dataset.id);
       if (!item) return;
       const input = document.getElementById('propTagInput');
       const val = input.value.trim();
@@ -1534,7 +1534,7 @@
         alert('请先选中一个卡片');
         return;
       }
-      const item = items.find(i => i.id === selectedItem.dataset.id);
+      const item = items.find(i => i.assetId === selectedItem.dataset.id || i.id === selectedItem.dataset.id);
       if (!item) { alert('找不到卡片数据'); return; }
 
       const clipboardData = await window.whiteboardAPI.readClipboardImage();
@@ -1673,7 +1673,7 @@
     function updateTimerDisplay(itemId) {
       const container = whiteboard.querySelector(`[data-id="${itemId}"]`);
       if (!container) return;
-      const item = items.find(i => i.id === itemId);
+      const item = items.find(i => i.assetId === itemId || i.id === itemId);
       if (!item) return;
       const timerEl = container.querySelector('.timer-display');
       if (timerEl) {
@@ -1710,7 +1710,7 @@
     }
 
     function toggleTimer(itemId) {
-      const item = items.find(i => i.id === itemId);
+      const item = items.find(i => i.assetId === itemId || i.id === itemId);
       if (!item) return;
       if (item.timerRunning) {
         item.timerTotal += Date.now() - item.timerStartedAt;
@@ -1725,7 +1725,7 @@
     }
 
     function showTimerDialog(type, itemId) {
-      const item = items.find(i => i.id === itemId);
+      const item = items.find(i => i.assetId === itemId || i.id === itemId);
       if (!item) return;
 
       const currentMs = item.timerTotal || 0;
@@ -1764,9 +1764,17 @@
       minuteInput.value = type === 'set' ? currentMinutes : 0;
       minuteInput.style.cssText = 'width:50px;padding:6px;background:#1a1a1a;border:1px solid #444;border-radius:4px;color:#fff;font-size:14px;text-align:center;-webkit-user-select:text;user-select:text;outline:none;';
 
-      row.innerHTML = '<span style="color:#999;font-size:14px;">时</span>';
+      const hourSpan = document.createElement('span');
+      hourSpan.style.cssText = 'color:#999;font-size:14px;';
+      hourSpan.textContent = '时';
+
+      const minuteSpan = document.createElement('span');
+      minuteSpan.style.cssText = 'color:#999;font-size:14px;';
+      minuteSpan.textContent = '分';
+
+      row.appendChild(hourSpan);
       row.appendChild(hourInput);
-      row.innerHTML += '<span style="color:#999;font-size:14px;">分</span>';
+      row.appendChild(minuteSpan);
       row.appendChild(minuteInput);
 
       const hint = document.createElement('div');
@@ -1829,7 +1837,7 @@
       btn.textContent = item.timerRunning ? '\u23F8 停止' : '\u25B6 开始';
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        toggleTimer(item.id);
+        toggleTimer(item.assetId || item.id);
       });
 
       bar.appendChild(display);
@@ -1858,9 +1866,7 @@
       panX = state.panX || 0;
       panY = state.panY || 0;
       items = state.items || [];
-      itemIdCounter = items.length > 0
-        ? Math.max(...items.map(i => parseInt(i.id.replace('item_', '')) || 0)) + 1
-        : 1;
+      itemIdCounter = items.length + 1;
 
       items.forEach(item => {
         if (!item.timerTotal) item.timerTotal = 0;
@@ -1904,14 +1910,9 @@
       if (saveTimeout) clearTimeout(saveTimeout);
       saveIndicator.classList.remove('show');
       saveTimeout = setTimeout(async () => {
-        const state = {
-          version: 1,
-          zoom: currentZoom,
-          panX: panX,
-          panY: panY,
-          items: items
-        };
-        await window.whiteboardAPI.writeState(state);
+        for (const item of items) {
+          await window.whiteboardAPI.saveItemState(item);
+        }
         saveIndicator.classList.add('show');
         setTimeout(() => saveIndicator.classList.remove('show'), 1500);
       }, 500);
@@ -1937,7 +1938,7 @@
           whiteboard.appendChild(container);
           const timerBar = createTimerBar(itemData);
           container.appendChild(timerBar);
-          updateTimerDisplay(itemData.id);
+          updateTimerDisplay(itemData.assetId || itemData.id);
           items.push(itemData);
         }
         updateItemCount();
@@ -2020,22 +2021,26 @@
 
       const newItem = {
         id: id,
-        type: isImage ? 'image' : 'file',
         assetId: assetResult.assetId,
         originalName: filename,
+        cardName: '',
+        type: isImage ? 'image' : 'file',
         x: centerX,
         y: centerY,
         width: 0,
         height: 0,
         timerTotal: 0,
         timerRunning: false,
-        timerStartedAt: null
+        timerStartedAt: null,
+        cardTags: [],
+        cardAnnotation: '',
+        cardUrl: ''
       };
       items.push(newItem);
 
       const timerBar = createTimerBar(newItem);
       container.appendChild(timerBar);
-      updateTimerDisplay(id);
+      updateTimerDisplay(assetResult.assetId);
 
       const width = isImage ? Math.min(container.offsetWidth, 400) : 120;
       const height = isImage ? Math.min(container.offsetHeight, 400) : 120;
@@ -2072,7 +2077,7 @@
     function createImageContainer(id, assetId, originalName) {
       const container = document.createElement('div');
       container.className = 'image-item';
-      container.dataset.id = id;
+      container.dataset.id = assetId;
       container.dataset.assetId = assetId;
       container.dataset.originalName = originalName || '';
       container.style.zIndex = zIndex++;
@@ -2121,7 +2126,7 @@
     function createFileContainer(id, assetId, originalName) {
       const container = document.createElement('div');
       container.className = 'file-item';
-      container.dataset.id = id;
+      container.dataset.id = assetId;
       container.dataset.assetId = assetId;
       container.style.zIndex = zIndex++;
       container.style.display = 'flex';
@@ -2377,7 +2382,7 @@
     function onMouseUp(e) {
       if (dragItem) {
         selectedItems.forEach(el => {
-          const item = items.find(i => i.id === el.dataset.id);
+          const item = items.find(i => i.assetId === el.dataset.id || i.id === el.dataset.id);
           if (item) {
             item.x = parseFloat(el.style.left);
             item.y = parseFloat(el.style.top);
@@ -2385,7 +2390,7 @@
         });
       }
       if (isResizing && selectedItem) {
-        const item = items.find(i => i.id === selectedItem.dataset.id);
+        const item = items.find(i => i.assetId === selectedItem.dataset.id || i.id === selectedItem.dataset.id);
         if (item) {
           item.width = selectedItem.offsetWidth;
           item.height = selectedItem.offsetHeight;
@@ -2412,7 +2417,7 @@
       if (selectedItems.size === 0) return;
       const idsToDelete = [...selectedItems].map(el => el.dataset.id);
       const deletedItems = idsToDelete.map(id => {
-        const item = items.find(i => i.id === id);
+        const item = items.find(i => i.assetId === id || i.id === id);
         return { ...item };
       });
       pushUndo({ type: 'delete', items: deletedItems });
@@ -2420,7 +2425,7 @@
         const el = whiteboard.querySelector(`[data-id="${id}"]`);
         if (el) el.remove();
       });
-      items = items.filter(i => !idsToDelete.includes(i.id));
+      items = items.filter(i => !idsToDelete.includes(i.assetId || i.id));
       clearSelection();
       updateItemCount();
       scheduleSave();

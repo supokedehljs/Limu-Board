@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld('whiteboardAPI', {
   saveFile: (buffer, filename) => ipcRenderer.invoke('save-file', { buffer, filename }),
   readState: () => ipcRenderer.invoke('read-state'),
   writeState: (state) => ipcRenderer.invoke('write-state', state),
+  saveItemState: (item) => ipcRenderer.invoke('save-item-state', item),
   openFile: (assetId) => ipcRenderer.invoke('open-file', assetId),
   getFileIcon: (filename) => ipcRenderer.invoke('get-file-icon', filename),
   windowMinimize: () => ipcRenderer.invoke('window-minimize'),
