@@ -3588,12 +3588,14 @@
         item.style.zIndex = zIndex++;
       }
       if (todoPanelOpen) renderTodoList();
-      if (propPanelOpen) {
-        if (item) {
-          renderPropPanel(item.dataset.id);
-        } else {
-          document.getElementById('propContent').innerHTML = '<div class="prop-no-selection">选择卡片查看属性</div>';
+      if (item) {
+        if (!propPanelOpen) {
+          propPanelOpen = true;
+          document.getElementById('propPanel').classList.add('open');
         }
+        renderPropPanel(item.dataset.id);
+      } else {
+        document.getElementById('propContent').innerHTML = '<div class="prop-no-selection">选择卡片查看属性</div>';
       }
     }
 
@@ -3602,9 +3604,7 @@
       selectedItems.clear();
       selectedItem = null;
       if (todoPanelOpen) renderTodoList();
-      if (propPanelOpen) {
-        document.getElementById('propContent').innerHTML = '<div class="prop-no-selection">选择卡片查看属性</div>';
-      }
+      document.getElementById('propContent').innerHTML = '<div class="prop-no-selection">选择卡片查看属性</div>';
     }
 
     function onMouseDown(e) {
