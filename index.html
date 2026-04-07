@@ -1983,7 +1983,7 @@
             for (const file of files) {
               const arrayBuffer = await file.arrayBuffer();
               const buffer = new Uint8Array(arrayBuffer);
-              const assetResult = await window.whiteboardAPI.addAsset(Array.from(buffer), file.name);
+              const assetResult = await window.whiteboardAPI.addAsset(Array.from(buffer), file.name, item.id);
               await window.whiteboardAPI.attachAssetToCard(item.id, assetResult.assetId);
               if (!item.attachments) item.attachments = [];
               item.attachments.push(assetResult.assetId);

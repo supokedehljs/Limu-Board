@@ -3,7 +3,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('whiteboardAPI', {
   getDataPath: () => ipcRenderer.invoke('get-data-path'),
   ensureDataDir: () => ipcRenderer.invoke('ensure-data-dir'),
-  addAsset: (buffer, filename) => ipcRenderer.invoke('add-asset', { buffer, filename }),
+  addAsset: (buffer, filename, cardId) => ipcRenderer.invoke('add-asset', { buffer, filename, cardId }),
   getAsset: (assetId) => ipcRenderer.invoke('get-asset', assetId),
   getAssetThumbnail: (assetId) => ipcRenderer.invoke('get-asset-thumbnail', assetId),
   saveFile: (buffer, filename) => ipcRenderer.invoke('save-file', { buffer, filename }),

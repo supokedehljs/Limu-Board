@@ -280,13 +280,19 @@ ipcMain.handle('ensure-data-dir', async () => {
   return ensureDataDir();
 });
 
-ipcMain.handle('add-asset', async (event, { buffer, filename }) => {
+ipcMain.handle('add-asset', async (event, { buffer, filename, cardId }) => {
   try {
     await ensureDataDir();
     const assetId = generateAssetId();
     const activeLibraryPath = await getActiveLibraryPath();
     const assetsPath = path.join(activeLibraryPath, 'assets');
-    const assetDir = path.join(assetsPath, assetId);
+    
+    let assetDir;
+    if (cardId) {
+      assetDir = path.join(assetsPath, cardId, 'attachments', assetId);
+    } else {
+      assetDir = path.join(assetsPath, assetId);
+    }
     await fs.mkdir(assetDir, { recursive: true });
 
     const ext = path.extname(filename).toLowerCase();
@@ -337,12 +343,26 @@ ipcMain.handle('add-asset', async (event, { buffer, filename }) => {
 ipcMain.handle('get-asset', async (event, assetId) => {
   try {
     const assetsPath = await getAssetsPath();
-    const assetDir = path.join(assetsPath, assetId);
+    let assetDir = path.join(assetsPath, assetId);
+    let found = false;
+    
     try {
       await fs.access(assetDir);
+      found = true;
     } catch {
-      return null;
+      const entries = await fs.readdir(assetsPath);
+      for (const entry of entries) {
+        const attachmentPath = path.join(assetsPath, entry, 'attachments', assetId);
+        try {
+          await fs.access(attachmentPath);
+          assetDir = attachmentPath;
+          found = true;
+          break;
+        } catch {}
+      }
     }
+    
+    if (!found) return null;
 
     const metadataPath = path.join(assetDir, 'metadata.json');
     let metadata = null;
@@ -374,12 +394,26 @@ ipcMain.handle('get-asset', async (event, assetId) => {
 ipcMain.handle('get-asset-thumbnail', async (event, assetId) => {
   try {
     const assetsPath = await getAssetsPath();
-    const assetDir = path.join(assetsPath, assetId);
+    let assetDir = path.join(assetsPath, assetId);
+    let found = false;
+    
     try {
       await fs.access(assetDir);
+      found = true;
     } catch {
-      return null;
+      const entries = await fs.readdir(assetsPath);
+      for (const entry of entries) {
+        const attachmentPath = path.join(assetsPath, entry, 'attachments', assetId);
+        try {
+          await fs.access(attachmentPath);
+          assetDir = attachmentPath;
+          found = true;
+          break;
+        } catch {}
+      }
     }
+    
+    if (!found) return null;
 
     const thumbnailPath = path.join(assetDir, 'thumbnail.png');
     try {
@@ -496,10 +530,23 @@ ipcMain.handle('delete-item-state', async (event, assetId) => {
   try {
     const libPath = await getActiveLibraryPath();
     const assetsPath = path.join(libPath, 'assets');
-    const assetDir = path.join(assetsPath, assetId);
+    let assetDir = path.join(assetsPath, assetId);
     
     try {
       await fs.access(assetDir);
+    } catch {
+      const entries = await fs.readdir(assetsPath);
+      for (const entry of entries) {
+        const attachmentPath = path.join(assetsPath, entry, 'attachments', assetId);
+        try {
+          await fs.access(attachmentPath);
+          assetDir = attachmentPath;
+          break;
+        } catch {}
+      }
+    }
+    
+    try {
       await fs.rm(assetDir, { recursive: true, force: true });
     } catch {}
   } catch (err) {
@@ -511,20 +558,34 @@ ipcMain.handle('open-file', async (event, assetId) => {
     try {
       const activeLibraryPath = await getActiveLibraryPath();
       const assetsPath = path.join(activeLibraryPath, 'assets');
-      const assetDir = path.join(assetsPath, assetId);
+      let assetDir = path.join(assetsPath, assetId);
+      let found = false;
+      
       try {
         await fs.access(assetDir);
+        found = true;
       } catch {
-        return null;
+        const entries = await fs.readdir(assetsPath);
+        for (const entry of entries) {
+          const attachmentPath = path.join(assetsPath, entry, 'attachments', assetId);
+          try {
+            await fs.access(attachmentPath);
+            assetDir = attachmentPath;
+            found = true;
+            break;
+          } catch {}
+        }
       }
-    const entries = await fs.readdir(assetDir);
-    const originalFile = entries.find(f => f.startsWith('original'));
-    if (originalFile) {
-      shell.openPath(path.join(assetDir, originalFile));
+      
+      if (!found) return null;
+      const entries = await fs.readdir(assetDir);
+      const originalFile = entries.find(f => f.startsWith('original'));
+      if (originalFile) {
+        shell.openPath(path.join(assetDir, originalFile));
+      }
+    } catch (err) {
+      console.error('open-file error:', err);
     }
-  } catch (err) {
-    console.error('open-file error:', err);
-  }
 });
 
 ipcMain.handle('get-file-icon', async (event, filename) => {
@@ -748,20 +809,34 @@ ipcMain.handle('set-card-thumbnail', async (event, { assetId, buffer }) => {
     try {
       const activeLibraryPath = await getActiveLibraryPath();
       const assetsPath = path.join(activeLibraryPath, 'assets');
-      const assetDir = path.join(assetsPath, assetId);
+      let assetDir = path.join(assetsPath, assetId);
+      let found = false;
+      
       try {
         await fs.access(assetDir);
+        found = true;
       } catch {
-        return null;
+        const entries = await fs.readdir(assetsPath);
+        for (const entry of entries) {
+          const attachmentPath = path.join(assetsPath, entry, 'attachments', assetId);
+          try {
+            await fs.access(attachmentPath);
+            assetDir = attachmentPath;
+            found = true;
+            break;
+          } catch {}
+        }
       }
-    const thumbnailPath = path.join(assetDir, 'thumbnail.png');
-    const buf = Buffer.from(buffer);
-    await fs.writeFile(thumbnailPath, buf);
-    return true;
-  } catch (e) {
-    console.error('set-card-thumbnail error:', e);
-    return false;
-  }
+      
+      if (!found) return null;
+      const thumbnailPath = path.join(assetDir, 'thumbnail.png');
+      const buf = Buffer.from(buffer);
+      await fs.writeFile(thumbnailPath, buf);
+      return true;
+    } catch (e) {
+      console.error('set-card-thumbnail error:', e);
+      return false;
+    }
 });
 
 ipcMain.handle('read-file-as-base64', async (event, filePath) => {
