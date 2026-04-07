@@ -413,6 +413,26 @@
       background: #c62828;
     }
 
+    .archive-btn {
+      width: 24px;
+      height: 24px;
+      border: 1px solid #555;
+      background: #3a3a3a;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: #ddd;
+      margin-left: 4px;
+    }
+
+    .archive-btn:hover {
+      background: #4a4a4a;
+    }
+
     .resize-handle {
       position: absolute;
       width: 12px;
@@ -1181,6 +1201,10 @@
       <h3>待办列表</h3>
     </div>
     <input type="text" id="todoSearch" placeholder="搜索...">
+    <label style="display:flex;align-items:center;padding:8px 12px;font-size:12px;color:#999;">
+      <input type="checkbox" id="todoShowArchived" style="margin-right:6px;">
+      显示已归档
+    </label>
     <div id="todoList"></div>
   </div>
 
@@ -1372,25 +1396,31 @@
     function renderTodoList() {
       const listEl = document.getElementById('todoList');
       const searchVal = (document.getElementById('todoSearch').value || '').toLowerCase();
+      const showArchived = document.getElementById('todoShowArchived')?.checked || false;
+      
       const filtered = items.filter(item => {
+        if (!showArchived && item.archived) return false;
         const name = item.cardName || item.originalName || '';
         return name.toLowerCase().includes(searchVal);
       });
+      
       if (filtered.length === 0) {
         listEl.innerHTML = '<div style="color:#777;font-size:12px;padding:12px 0;text-align:center;">暂无待办</div>';
         return;
       }
+      
       listEl.innerHTML = '';
       for (const item of filtered) {
         const el = document.createElement('div');
         el.className = 'todo-item' + (selectedItem && selectedItem.dataset.id === item.id ? ' active' : '');
+        el.className += item.archived ? ' archived' : '';
         const icon = item.type === 'image' ? '\uD83D\uDDBC' : getIconForFile(item.originalName);
         const timerText = getItemTimerDisplay(item);
         const isRunning = item.timerRunning;
         el.innerHTML = `
           <span class="todo-item-icon">${icon}</span>
           <div class="todo-item-info">
-            <div class="todo-item-name">${escapeHtml(item.cardName || item.originalName || '未命名')}</div>
+            <div class="todo-item-name">${escapeHtml(item.cardName || item.originalName || '未命名')}${item.archived ? ' (已归档)' : ''}</div>
             <div class="todo-item-timer${isRunning ? ' running' : ''}">${timerText}</div>
           </div>
         `;
@@ -1551,6 +1581,10 @@
     }
 
     document.getElementById('todoSearch').addEventListener('input', () => {
+      if (todoPanelOpen) renderTodoList();
+    });
+
+    document.getElementById('todoShowArchived')?.addEventListener('change', () => {
       if (todoPanelOpen) renderTodoList();
     });
 
@@ -2069,26 +2103,35 @@
     }
 
     function createTimerBar(item) {
-      const bar = document.createElement('div');
-      bar.className = 'card-timer';
-      bar.addEventListener('mousedown', (e) => e.stopPropagation());
-      bar.addEventListener('click', (e) => e.stopPropagation());
+      return null;
+    }
 
-      const display = document.createElement('span');
-      display.className = 'timer-display';
-      display.textContent = getItemTimerDisplay(item);
+    function createCardControls(item) {
+      return null;
+    }
 
-      const btn = document.createElement('button');
-      btn.className = 'timer-btn' + (item.timerRunning ? ' running' : '');
-      btn.textContent = item.timerRunning ? '\u25CF' : '\u25B6';
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        toggleTimer(item.assetId || item.id);
-      });
-
-      bar.appendChild(display);
-      bar.appendChild(btn);
-      return bar;
+    function toggleArchive(itemId) {
+      const item = items.find(i => i.assetId === itemId || i.id === itemId);
+      if (!item) return;
+      
+      item.archived = !item.archived;
+      
+      const el = whiteboard.querySelector(`[data-id="${itemId}"]`) || whiteboard.querySelector(`[data-asset-id="${itemId}"]`);
+      if (el) {
+        if (item.archived) {
+          el.style.opacity = '0.3';
+          el.style.filter = 'grayscale(100%)';
+        } else {
+          el.style.opacity = '1';
+          el.style.filter = '';
+        }
+        const checkBtn = el.querySelector('.check-btn');
+        if (checkBtn) {
+          checkBtn.textContent = item.archived ? '\u2611' : '\u2610';
+        }
+      }
+      scheduleSave();
+      renderTodoList();
     }
 
     async function init() {
@@ -2145,6 +2188,13 @@
         updateZoomDisplay();
 
         for (const item of items) {
+          if (item.archived) {
+            const el = document.createElement('div');
+            el.dataset.id = item.assetId || item.id;
+            el.style.display = 'none';
+            whiteboard.appendChild(el);
+            continue;
+          }
           if (item.type === 'image') {
             await createImageElement(item);
           } else {
@@ -2207,8 +2257,10 @@
           container.style.width = itemData.width + 'px';
           container.style.height = itemData.height + 'px';
           whiteboard.appendChild(container);
-          const timerBar = createTimerBar(itemData);
-          container.appendChild(timerBar);
+          if (itemData.archived) {
+            container.style.opacity = '0.3';
+            container.style.filter = 'grayscale(100%)';
+          }
           updateTimerDisplay(itemData.assetId || itemData.id);
           items.push(itemData);
         }
@@ -2309,8 +2361,6 @@
       };
       items.push(newItem);
 
-      const timerBar = createTimerBar(newItem);
-      container.appendChild(timerBar);
       updateTimerDisplay(assetResult.assetId);
 
       const width = isImage ? Math.min(container.offsetWidth, 400) : 120;
@@ -2353,6 +2403,29 @@
       container.dataset.originalName = originalName || '';
       container.style.zIndex = zIndex++;
 
+      const topBar = document.createElement('div');
+      topBar.className = 'card-top-bar';
+      topBar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:rgba(0,0,0,0.4);';
+
+      const titleSpan = document.createElement('span');
+      titleSpan.className = 'card-title';
+      titleSpan.textContent = originalName || '未命名';
+      titleSpan.style.cssText = 'color:#fff;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100px;';
+
+      const checkBtn = document.createElement('button');
+      checkBtn.className = 'check-btn';
+      checkBtn.textContent = '\u2610';
+      checkBtn.title = '标记完成';
+      checkBtn.style.cssText = 'width:20px;height:20px;border:none;background:transparent;cursor:pointer;font-size:14px;color:#fff;';
+      checkBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleArchive(assetId);
+      });
+
+      topBar.appendChild(titleSpan);
+      topBar.appendChild(checkBtn);
+      container.appendChild(topBar);
+
       const imgWrapper = document.createElement('div');
       imgWrapper.className = 'img-wrapper';
       const img = document.createElement('img');
@@ -2369,6 +2442,27 @@
         }
       };
       loadImg();
+
+      const bottomBar = document.createElement('div');
+      bottomBar.className = 'card-bottom-bar';
+      bottomBar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:rgba(0,0,0,0.4);';
+
+      const timerDisplay = document.createElement('span');
+      timerDisplay.className = 'timer-display';
+      timerDisplay.textContent = '00:00:00';
+
+      const timerBtn = document.createElement('button');
+      timerBtn.className = 'timer-btn';
+      timerBtn.textContent = '\u25B6';
+      timerBtn.style.cssText = 'width:20px;height:20px;border:none;background:rgba(255,255,255,0.2);border-radius:50%;cursor:pointer;font-size:10px;color:#fff;';
+      timerBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleTimer(assetId);
+      });
+
+      bottomBar.appendChild(timerDisplay);
+      bottomBar.appendChild(timerBtn);
+      container.appendChild(bottomBar);
 
       const handles = ['nw', 'ne', 'sw', 'se'];
       handles.forEach(pos => {
@@ -2406,6 +2500,29 @@
 
       const ext = originalName ? '.' + originalName.split('.').pop().toLowerCase() : '';
 
+      const topBar = document.createElement('div');
+      topBar.className = 'card-top-bar';
+      topBar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:rgba(0,0,0,0.4);flex-shrink:0;';
+
+      const titleSpan = document.createElement('span');
+      titleSpan.className = 'card-title';
+      titleSpan.textContent = originalName || '未命名';
+      titleSpan.style.cssText = 'color:#fff;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100px;';
+
+      const checkBtn = document.createElement('button');
+      checkBtn.className = 'check-btn';
+      checkBtn.textContent = '\u2610';
+      checkBtn.title = '标记完成';
+      checkBtn.style.cssText = 'width:20px;height:20px;border:none;background:transparent;cursor:pointer;font-size:14px;color:#fff;';
+      checkBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleArchive(assetId);
+      });
+
+      topBar.appendChild(titleSpan);
+      topBar.appendChild(checkBtn);
+      container.appendChild(topBar);
+
       const thumbWrapper = document.createElement('div');
       thumbWrapper.className = 'file-thumb-wrapper';
       thumbWrapper.style.flex = '1';
@@ -2438,11 +2555,26 @@
 
       container.appendChild(thumbWrapper);
 
-      const nameDiv = document.createElement('div');
-      nameDiv.className = 'filename';
-      nameDiv.textContent = originalName;
-      nameDiv.style.flexShrink = '0';
-      container.appendChild(nameDiv);
+      const bottomBar = document.createElement('div');
+      bottomBar.className = 'card-bottom-bar';
+      bottomBar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:rgba(0,0,0,0.4);flex-shrink:0;';
+
+      const timerDisplay = document.createElement('span');
+      timerDisplay.className = 'timer-display';
+      timerDisplay.textContent = '00:00:00';
+
+      const timerBtn = document.createElement('button');
+      timerBtn.className = 'timer-btn';
+      timerBtn.textContent = '\u25B6';
+      timerBtn.style.cssText = 'width:20px;height:20px;border:none;background:rgba(255,255,255,0.2);border-radius:50%;cursor:pointer;font-size:10px;color:#fff;';
+      timerBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleTimer(assetId);
+      });
+
+      bottomBar.appendChild(timerDisplay);
+      bottomBar.appendChild(timerBtn);
+      container.appendChild(bottomBar);
 
       const handles = ['nw', 'ne', 'sw', 'se'];
       handles.forEach(pos => {
@@ -2478,10 +2610,14 @@
       container.style.height = item.height + 'px';
       container.style.left = item.x + 'px';
       container.style.top = item.y + 'px';
+      
+      if (item.archived) {
+        container.style.opacity = '0.3';
+        container.style.filter = 'grayscale(100%)';
+      }
+      
       whiteboard.appendChild(container);
 
-      const timerBar = createTimerBar(item);
-      container.appendChild(timerBar);
       updateTimerDisplay(item.assetId || item.id);
     }
 
@@ -2492,10 +2628,14 @@
       container.style.height = item.height + 'px';
       container.style.left = item.x + 'px';
       container.style.top = item.y + 'px';
+      
+      if (item.archived) {
+        container.style.opacity = '0.3';
+        container.style.filter = 'grayscale(100%)';
+      }
+      
       whiteboard.appendChild(container);
 
-      const timerBar = createTimerBar(item);
-      container.appendChild(timerBar);
       updateTimerDisplay(item.assetId || item.id);
     }
 
@@ -2663,6 +2803,8 @@
             el.style.top = newTop + 'px';
           });
         } else {
+          const dx = e.clientX - start.x;
+          const dy = e.clientY - start.y;
           let newWidth = start.width;
           let newHeight = start.height;
           let newLeft = start.left;
