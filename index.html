@@ -1581,6 +1581,26 @@
           <button class="hotkey-reset" onclick="resetMaximizeHotkey()">重置</button>
         </div>
       </div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-row-label">折叠/展开左栏</div>
+          <div class="settings-row-desc">切换左侧工具栏显示</div>
+        </div>
+        <div class="hotkey-input">
+          <div class="hotkey-display" id="toggleLeftHotkeyDisplay" tabindex="0">Ctrl+B</div>
+          <button class="hotkey-reset" onclick="resetToggleLeftHotkey()">重置</button>
+        </div>
+      </div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-row-label">折叠/展开右栏</div>
+          <div class="settings-row-desc">切换右侧属性面板显示</div>
+        </div>
+        <div class="hotkey-input">
+          <div class="hotkey-display" id="toggleRightHotkeyDisplay" tabindex="0">Ctrl+Shift+P</div>
+          <button class="hotkey-reset" onclick="resetToggleRightHotkey()">重置</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1669,6 +1689,36 @@
       document.getElementById('propPanel').classList.toggle('open', propPanelOpen);
       if (propPanelOpen && selectedItem) {
         renderPropPanel(selectedItem.dataset.id);
+      }
+    }
+
+    let leftPanelCollapsed = false;
+    let rightPanelCollapsed = false;
+
+    function toggleLeftPanel() {
+      leftPanelCollapsed = !leftPanelCollapsed;
+      const leftToolbar = document.getElementById('leftToolbar');
+      const canvasContainer = document.getElementById('canvas-container');
+      if (leftPanelCollapsed) {
+        leftToolbar.style.display = 'none';
+        canvasContainer.style.left = '0';
+      } else {
+        leftToolbar.style.display = 'flex';
+        canvasContainer.style.left = '40px';
+      }
+    }
+
+    function toggleRightPanel() {
+      rightPanelCollapsed = !rightPanelCollapsed;
+      const propPanel = document.getElementById('propPanel');
+      const canvasContainer = document.getElementById('canvas-container');
+      if (rightPanelCollapsed) {
+        propPanel.classList.remove('open');
+      } else {
+        propPanel.classList.add('open');
+        if (selectedItem) {
+          renderPropPanel(selectedItem.dataset.id);
+        }
       }
     }
 
@@ -2203,6 +2253,10 @@
       if (resetViewHotkeyEl) resetViewHotkeyEl.textContent = settings.localHotkeys?.resetView || '0';
       if (setThumbHotkeyEl) setThumbHotkeyEl.textContent = settings.localHotkeys?.setThumb || 'Ctrl+Shift+T';
       if (maximizeHotkeyEl) maximizeHotkeyEl.textContent = settings.localHotkeys?.maximize || 'Ctrl+F';
+      const toggleLeftHotkeyEl = document.getElementById('toggleLeftHotkeyDisplay');
+      const toggleRightHotkeyEl = document.getElementById('toggleRightHotkeyDisplay');
+      if (toggleLeftHotkeyEl) toggleLeftHotkeyEl.textContent = settings.localHotkeys?.toggleLeft || 'Ctrl+B';
+      if (toggleRightHotkeyEl) toggleRightHotkeyEl.textContent = settings.localHotkeys?.toggleRight || 'Ctrl+Shift+P';
     }
 
     function setupHotkeyInput(elementId, settingKey, callback) {
@@ -2405,6 +2459,42 @@
       document.addEventListener('keydown', window._maximizeKeyHandler);
     }
 
+    function setupToggleLeftKeyBinding(key) {
+      document.removeEventListener('keydown', window._toggleLeftKeyHandler);
+      if (!key) return;
+      const parts = key.split('+').map(p => p.trim());
+      window._toggleLeftKeyHandler = (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+        const wantCtrl = parts.includes('Ctrl');
+        const wantShift = parts.includes('Shift');
+        const wantAlt = parts.includes('Alt');
+        const mainKey = parts.find(p => !['Ctrl', 'Shift', 'Alt', 'Meta'].includes(p));
+        if (e.ctrlKey === wantCtrl && e.shiftKey === wantShift && e.altKey === wantAlt && e.key.toUpperCase() === mainKey.toUpperCase()) {
+          e.preventDefault();
+          toggleLeftPanel();
+        }
+      };
+      document.addEventListener('keydown', window._toggleLeftKeyHandler);
+    }
+
+    function setupToggleRightKeyBinding(key) {
+      document.removeEventListener('keydown', window._toggleRightKeyHandler);
+      if (!key) return;
+      const parts = key.split('+').map(p => p.trim());
+      window._toggleRightKeyHandler = (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+        const wantCtrl = parts.includes('Ctrl');
+        const wantShift = parts.includes('Shift');
+        const wantAlt = parts.includes('Alt');
+        const mainKey = parts.find(p => !['Ctrl', 'Shift', 'Alt', 'Meta'].includes(p));
+        if (e.ctrlKey === wantCtrl && e.shiftKey === wantShift && e.altKey === wantAlt && e.key.toUpperCase() === mainKey.toUpperCase()) {
+          e.preventDefault();
+          toggleRightPanel();
+        }
+      };
+      document.addEventListener('keydown', window._toggleRightKeyHandler);
+    }
+
     async function toggleWindowMaximize() {
       const isMax = await window.whiteboardAPI.windowIsMaximized();
       if (isMax) {
@@ -2438,6 +2528,16 @@
       setupMaximizeKeyBinding(value);
     });
 
+    setupHotkeyInput('toggleLeftHotkeyDisplay', 'toggleLeft', (value) => {
+      saveHotkeySetting('toggleLeft', value);
+      setupToggleLeftKeyBinding(value);
+    });
+
+    setupHotkeyInput('toggleRightHotkeyDisplay', 'toggleRight', (value) => {
+      saveHotkeySetting('toggleRight', value);
+      setupToggleRightKeyBinding(value);
+    });
+
     function resetSetThumbHotkey() {
       saveHotkeySetting('setThumb', 'Alt+T');
       setupSetThumbKeyBinding('Alt+T');
@@ -2446,6 +2546,16 @@
     function resetMaximizeHotkey() {
       saveHotkeySetting('maximize', 'Ctrl+F');
       setupMaximizeKeyBinding('Ctrl+F');
+    }
+
+    function resetToggleLeftHotkey() {
+      saveHotkeySetting('toggleLeft', 'Ctrl+B');
+      setupToggleLeftKeyBinding('Ctrl+B');
+    }
+
+    function resetToggleRightHotkey() {
+      saveHotkeySetting('toggleRight', 'Ctrl+Shift+P');
+      setupToggleRightKeyBinding('Ctrl+Shift+P');
     }
 
     function formatTime(ms) {
@@ -2690,6 +2800,8 @@
         setupResetViewKeyBinding(settings.localHotkeys?.resetView || '0');
         setupSetThumbKeyBinding(settings.localHotkeys?.setThumb || 'Alt+T');
         setupMaximizeKeyBinding(settings.localHotkeys?.maximize || 'Ctrl+F');
+        setupToggleLeftKeyBinding(settings.localHotkeys?.toggleLeft || 'Ctrl+B');
+        setupToggleRightKeyBinding(settings.localHotkeys?.toggleRight || 'Ctrl+Shift+P');
         setupNewCardKeyBinding();
 
         const state = await window.whiteboardAPI.readState();
