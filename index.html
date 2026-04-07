@@ -1697,21 +1697,18 @@
 
     function toggleLeftPanel() {
       leftPanelCollapsed = !leftPanelCollapsed;
-      const leftToolbar = document.getElementById('leftToolbar');
-      const canvasContainer = document.getElementById('canvas-container');
+      const todoPanel = document.getElementById('todoPanel');
       if (leftPanelCollapsed) {
-        leftToolbar.style.display = 'none';
-        canvasContainer.style.left = '0';
+        todoPanel.classList.remove('open');
       } else {
-        leftToolbar.style.display = 'flex';
-        canvasContainer.style.left = '40px';
+        todoPanel.classList.add('open');
+        renderTodoList();
       }
     }
 
     function toggleRightPanel() {
       rightPanelCollapsed = !rightPanelCollapsed;
       const propPanel = document.getElementById('propPanel');
-      const canvasContainer = document.getElementById('canvas-container');
       if (rightPanelCollapsed) {
         propPanel.classList.remove('open');
       } else {
