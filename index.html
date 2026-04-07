@@ -364,6 +364,26 @@
       margin-bottom: 8px;
     }
 
+    .card-item {
+      position: absolute;
+      cursor: move;
+      user-select: none;
+      border: 2px solid transparent;
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+
+    .card-item:hover {
+      border-color: #4a90d9;
+    }
+
+    .card-item.selected {
+      border-color: #4a90d9;
+    }
+
     .card-timer {
       display: flex;
       align-items: center;
@@ -575,11 +595,13 @@
     .todo-item {
       display: flex;
       align-items: center;
-      padding: 8px 10px;
-      border-radius: 4px;
+      padding: 10px 12px;
+      border-radius: 6px;
       cursor: pointer;
-      margin-bottom: 2px;
-      transition: background 0.1s;
+      margin-bottom: 4px;
+      transition: background 0.15s;
+      background: #2a2a2a;
+      gap: 12px;
     }
 
     .todo-item:hover {
@@ -588,32 +610,53 @@
 
     .todo-item.active {
       background: #2a3a4a;
+      border: 1px solid #4a90d9;
+    }
+
+    .todo-item.archived {
+      opacity: 0.5;
     }
 
     .todo-item-icon {
-      font-size: 16px;
-      margin-right: 8px;
+      font-size: 14px;
       flex-shrink: 0;
+      width: 20px;
+      text-align: center;
     }
 
-    .todo-item-info {
+    .todo-item-main {
       flex: 1;
       min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
     }
 
     .todo-item-name {
       color: #ddd;
-      font-size: 12px;
+      font-size: 14px;
+      font-weight: 500;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
-    .todo-item-timer {
+    .todo-item.archived .todo-item-name {
+      text-decoration: line-through;
+      color: #888;
+    }
+
+    .todo-item-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
       color: #777;
-      font-size: 10px;
+    }
+
+    .todo-item-timer {
       font-family: 'Consolas', monospace;
-      margin-top: 2px;
+      color: #999;
     }
 
     .todo-item-timer.running {
@@ -629,6 +672,74 @@
       border-radius: 50%;
       margin-right: 4px;
       vertical-align: middle;
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .todo-item-tag {
+      background: #2a3a4a;
+      color: #4a90d9;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-size: 10px;
+    }
+
+    .todo-item-annotation {
+      color: #777;
+      font-size: 11px;
+      margin-top: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .todo-item:hover .todo-item-annotation {
+      white-space: normal;
+      overflow: visible;
+    }
+
+    .todo-item-actions {
+      display: flex;
+      gap: 6px;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    .todo-item:hover .todo-item-actions {
+      opacity: 1;
+    }
+
+    .todo-item-btn {
+      width: 28px;
+      height: 28px;
+      border: none;
+      background: #3a3a3a;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 12px;
+      color: #aaa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+
+    .todo-item-btn:hover {
+      background: #4a4a4a;
+      color: #fff;
+    }
+
+    .todo-item-btn.timer-btn.running {
+      background: #e53935;
+      color: #fff;
+    }
+
+    .todo-item-btn.archive-btn {
+      font-size: 14px;
     }
 
     .todo-folder {
@@ -672,6 +783,7 @@
 
     .todo-folder-body {
       padding-left: 8px;
+      padding-top: 4px;
     }
 
     .todo-folder.collapsed .todo-folder-body {
@@ -860,6 +972,126 @@
       color: #fff;
       font-size: 11px;
       cursor: pointer;
+    }
+
+    .attachments-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .attachments-empty {
+      color: #666;
+      font-size: 11px;
+      padding: 8px 0;
+    }
+
+    .attachment-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px;
+      background: #2a2a2a;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .attachment-item:hover {
+      background: #333;
+    }
+
+    .attachment-item.is-thumb {
+      border-color: #4a90d9;
+    }
+
+    .attachment-thumb {
+      width: 36px;
+      height: 36px;
+      border-radius: 4px;
+      overflow: hidden;
+      background: #1a1a1a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .attachment-thumb img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    .attachment-icon {
+      font-size: 20px;
+    }
+
+    .attachment-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .attachment-name {
+      font-size: 10px;
+      color: #999;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .attachment-badge {
+      font-size: 9px;
+      color: #4a90d9;
+      margin-top: 2px;
+    }
+
+    .attachment-actions {
+      display: flex;
+      gap: 4px;
+    }
+
+    .attachment-action-btn {
+      width: 24px;
+      height: 24px;
+      border: none;
+      background: #3a3a3a;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 11px;
+      color: #888;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+
+    .attachment-action-btn:hover {
+      background: #4a4a4a;
+      color: #fff;
+    }
+
+    .attachment-action-btn.delete-btn:hover {
+      background: #e53935;
+    }
+
+    .add-attachment-btn {
+      width: 100%;
+      padding: 8px;
+      border: 1px dashed #555;
+      background: transparent;
+      color: #888;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.15s;
+    }
+
+    .add-attachment-btn:hover {
+      border-color: #4a90d9;
+      color: #4a90d9;
+      background: rgba(74, 144, 217, 0.1);
     }
 
     .prop-no-selection {
@@ -1550,18 +1782,54 @@
     
     function createTodoItemElement(item) {
       const el = document.createElement('div');
-      el.className = 'todo-item' + (selectedItem && selectedItem.dataset.id === item.id ? ' active' : '');
-      el.className += item.archived ? ' archived' : '';
+      el.className = 'todo-item';
+      if (selectedItem && (selectedItem.dataset.id === item.id || selectedItem.dataset.id === item.assetId)) {
+        el.classList.add('active');
+      }
+      if (item.archived) {
+        el.classList.add('archived');
+      }
+
       const icon = item.type === 'image' ? '\uD83D\uDDBC' : getIconForFile(item.originalName);
       const timerText = getItemTimerDisplay(item);
       const isRunning = item.timerRunning;
+      const tags = item.cardTags || [];
+      const firstTag = tags.length > 0 ? tags[0] : '';
+      const annotation = item.cardAnnotation || '';
+
       el.innerHTML = `
         <span class="todo-item-icon">${icon}</span>
-        <div class="todo-item-info">
-          <div class="todo-item-name">${escapeHtml(item.cardName || item.originalName || '未命名')}${item.archived ? ' (已归档)' : ''}</div>
-          <div class="todo-item-timer${isRunning ? ' running' : ''}">${timerText}</div>
+        <div class="todo-item-main">
+          <div class="todo-item-name">${escapeHtml(item.cardName || item.originalName || '未命名')}</div>
+          <div class="todo-item-meta">
+            <span class="todo-item-timer${isRunning ? ' running' : ''}">${timerText}</span>
+            ${firstTag ? `<span class="todo-item-tag">${escapeHtml(firstTag)}</span>` : ''}
+            ${tags.length > 1 ? `<span class="todo-item-tag">+${tags.length - 1}</span>` : ''}
+          </div>
+          ${annotation ? `<div class="todo-item-annotation">${escapeHtml(annotation)}</div>` : ''}
+        </div>
+        <div class="todo-item-actions">
+          <button class="todo-item-btn timer-btn${isRunning ? ' running' : ''}" title="${isRunning ? '暂停' : '开始'}">
+            ${isRunning ? '\u25CF' : '\u25B6'}
+          </button>
+          <button class="todo-item-btn archive-btn" title="${item.archived ? '取消归档' : '归档'}">
+            ${item.archived ? '\u21A9' : '\u2610'}
+          </button>
         </div>
       `;
+
+      const timerBtn = el.querySelector('.timer-btn');
+      timerBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleTimer(item.assetId || item.id);
+      });
+
+      const archiveBtn = el.querySelector('.archive-btn');
+      archiveBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleArchive(item.assetId || item.id);
+      });
+
       el.addEventListener('click', (e) => {
         e.stopPropagation();
         const container = whiteboard.querySelector(`[data-id="${item.id}"]`) || whiteboard.querySelector(`[data-asset-id="${item.assetId}"]`);
@@ -1587,12 +1855,12 @@
         return;
       }
 
-      const thumbnailHtml = item.type === 'image'
-        ? `<div class="prop-thumbnail"><img id="propThumbImg" src="" alt=""></div>`
-        : `<div class="prop-thumbnail"><div class="file-icon">${getIconForFile(item.originalName)}</div></div>`;
+      const attachments = item.attachments || [];
+      const attachmentsHtml = attachments.length > 0
+        ? `<div class="attachments-list" id="attachmentsList"></div>`
+        : `<div class="attachments-list" id="attachmentsList"><div class="attachments-empty">暂无附件</div></div>`;
 
       contentEl.innerHTML = `
-        ${thumbnailHtml}
         <div class="prop-section">
           <div class="prop-field">
             <label>卡片名称</label>
@@ -1602,10 +1870,12 @@
             <label>注释</label>
             <textarea id="propAnnotation">${escapeHtml(item.cardAnnotation || '')}</textarea>
           </div>
-          <div class="prop-field">
-            <label>链接</label>
-            <input type="text" id="propUrl" value="${escapeHtml(item.cardUrl || '')}" placeholder="https://...">
-          </div>
+        </div>
+        <div class="prop-section">
+          <div class="prop-section-title">附件 <span id="attachmentCount"></span></div>
+          ${attachmentsHtml}
+          <button class="add-attachment-btn" id="addAttachmentBtn">+ 添加附件</button>
+          <input type="file" id="attachmentFileInput" style="display:none;" multiple>
         </div>
         <div class="prop-section">
           <div class="prop-section-title">标签</div>
@@ -1619,16 +1889,8 @@
           <div class="prop-section-title">基本信息</div>
           <div class="prop-info-grid">
             <div class="prop-info-item">
-              <div class="label">类型</div>
-              <div class="value">${item.type === 'image' ? '图片' : '文件'}</div>
-            </div>
-            <div class="prop-info-item">
-              <div class="label">原始名称</div>
-              <div class="value">${escapeHtml(item.originalName || '-')}</div>
-            </div>
-            <div class="prop-info-item">
-              <div class="label">尺寸</div>
-              <div class="value">${Math.round(item.width)} × ${Math.round(item.height)}</div>
+              <div class="label">附件数</div>
+              <div class="value">${attachments.length}</div>
             </div>
             <div class="prop-info-item">
               <div class="label">计时</div>
@@ -1638,16 +1900,8 @@
         </div>
       `;
 
-      if (item.type === 'image') {
-        const thumbImg = document.getElementById('propThumbImg');
-        window.whiteboardAPI.getAssetThumbnail(item.assetId).then(url => {
-          if (url) {
-            thumbImg.src = url;
-          }
-        });
-      }
-
       renderTags(item);
+      renderAttachmentsList(item);
 
       const nameInput = document.getElementById('propCardName');
       nameInput.addEventListener('input', () => {
@@ -1662,12 +1916,6 @@
         scheduleSave();
       });
 
-      const urlInput = document.getElementById('propUrl');
-      urlInput.addEventListener('input', () => {
-        item.cardUrl = urlInput.value;
-        scheduleSave();
-      });
-
       const tagInput = document.getElementById('propTagInput');
       tagInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
@@ -1675,6 +1923,140 @@
           addTag();
         }
       });
+
+      const addAttachmentBtn = document.getElementById('addAttachmentBtn');
+      const attachmentFileInput = document.getElementById('attachmentFileInput');
+      if (addAttachmentBtn && attachmentFileInput) {
+        addAttachmentBtn.addEventListener('click', () => {
+          attachmentFileInput.click();
+        });
+        attachmentFileInput.addEventListener('change', async (e) => {
+          const files = e.target.files;
+          if (files && files.length > 0) {
+            for (const file of files) {
+              const arrayBuffer = await file.arrayBuffer();
+              const buffer = new Uint8Array(arrayBuffer);
+              const assetResult = await window.whiteboardAPI.addAsset(Array.from(buffer), file.name);
+              await window.whiteboardAPI.attachAssetToCard(item.id, assetResult.assetId);
+              if (!item.attachments) item.attachments = [];
+              item.attachments.push(assetResult.assetId);
+              if (!item.thumbnailAssetId) {
+                item.thumbnailAssetId = assetResult.assetId;
+              }
+            }
+            scheduleSave();
+            renderPropPanel(item.id);
+            refreshWhiteboardItem(item);
+          }
+        });
+      }
+    }
+
+    async function renderAttachmentsList(item) {
+      const listEl = document.getElementById('attachmentsList');
+      const countEl = document.getElementById('attachmentCount');
+      if (!listEl || !item) return;
+
+      const attachments = item.attachments || [];
+      if (countEl) countEl.textContent = `(${attachments.length})`;
+
+      if (attachments.length === 0) {
+        listEl.innerHTML = '<div class="attachments-empty">暂无附件</div>';
+        return;
+      }
+
+      listEl.innerHTML = '';
+      for (const assetId of attachments) {
+        const thumbUrl = await window.whiteboardAPI.getAssetThumbnail(assetId);
+        const isThumb = item.thumbnailAssetId === assetId;
+        
+        const el = document.createElement('div');
+        el.className = 'attachment-item' + (isThumb ? ' is-thumb' : '');
+        el.innerHTML = `
+          <div class="attachment-thumb">
+            ${thumbUrl ? `<img src="${thumbUrl}" alt="">` : '<div class="attachment-icon">📄</div>'}
+          </div>
+          <div class="attachment-info">
+            <div class="attachment-name">${assetId.substring(0, 12)}...</div>
+            ${isThumb ? '<div class="attachment-badge">封面</div>' : ''}
+          </div>
+          <div class="attachment-actions">
+            <button class="attachment-action-btn set-thumb-btn" title="设为封面">📌</button>
+            <button class="attachment-action-btn delete-btn" title="删除">✕</button>
+          </div>
+        `;
+
+        const setThumbBtn = el.querySelector('.set-thumb-btn');
+        setThumbBtn.addEventListener('click', async () => {
+          item.thumbnailAssetId = assetId;
+          await window.whiteboardAPI.setCardThumbnailAsset(item.id, assetId);
+          scheduleSave();
+          renderPropPanel(item.id);
+          refreshWhiteboardItem(item);
+        });
+
+        const deleteBtn = el.querySelector('.delete-btn');
+        deleteBtn.addEventListener('click', async () => {
+          await window.whiteboardAPI.detachAssetFromCard(item.id, assetId);
+          item.attachments = item.attachments.filter(a => a !== assetId);
+          if (item.thumbnailAssetId === assetId) {
+            item.thumbnailAssetId = item.attachments.length > 0 ? item.attachments[0] : null;
+          }
+          scheduleSave();
+          renderPropPanel(item.id);
+          refreshWhiteboardItem(item);
+        });
+
+        listEl.appendChild(el);
+      }
+    }
+
+    async function refreshWhiteboardItem(item) {
+      const container = whiteboard.querySelector(`[data-item-id="${item.id}"]`);
+      if (!container) return;
+
+      if (item.type === 'card') {
+        const contentArea = container.querySelector('.card-content-area');
+        if (contentArea) {
+          const thumbAssetId = item.thumbnailAssetId || item.attachments?.[0];
+          if (thumbAssetId) {
+            const thumbUrl = await window.whiteboardAPI.getAssetThumbnail(thumbAssetId);
+            if (thumbUrl) {
+              contentArea.innerHTML = '';
+              contentArea.style.padding = '0';
+              const img = document.createElement('img');
+              img.style.maxWidth = '100%';
+              img.style.maxHeight = '100%';
+              img.style.objectFit = 'contain';
+              img.src = thumbUrl;
+              contentArea.appendChild(img);
+            }
+          } else {
+            contentArea.innerHTML = item.cardAnnotation || '拖拽文件到此处添加附件';
+            contentArea.style.padding = '12px';
+          }
+        }
+      } else {
+        const imgWrapper = container.querySelector('.img-wrapper, .file-thumb-wrapper');
+        if (imgWrapper) {
+          const thumbAssetId = item.thumbnailAssetId || item.assetId;
+          const thumbUrl = await window.whiteboardAPI.getAssetThumbnail(thumbAssetId);
+          if (thumbUrl) {
+            const existingImg = imgWrapper.querySelector('img');
+            if (existingImg) {
+              existingImg.src = thumbUrl;
+            } else {
+              imgWrapper.innerHTML = '';
+              const img = document.createElement('img');
+              img.style.maxWidth = '100%';
+              img.style.maxHeight = '100%';
+              img.style.objectFit = 'contain';
+              img.src = thumbUrl;
+              imgWrapper.appendChild(img);
+            }
+          }
+        }
+      }
     }
 
     function renderTags(item) {
@@ -1975,6 +2357,17 @@
         }
       };
       document.addEventListener('keydown', window._resetViewKeyHandler);
+    }
+
+    function setupNewCardKeyBinding() {
+      document.removeEventListener('keydown', window._newCardKeyHandler);
+      window._newCardKeyHandler = (e) => {
+        if (e.ctrlKey && e.key === 'n' && document.activeElement === document.body) {
+          e.preventDefault();
+          createEmptyCard();
+        }
+      };
+      document.addEventListener('keydown', window._newCardKeyHandler);
     }
 
     function setupSetThumbKeyBinding(key) {
@@ -2297,6 +2690,7 @@
         setupResetViewKeyBinding(settings.localHotkeys?.resetView || '0');
         setupSetThumbKeyBinding(settings.localHotkeys?.setThumb || 'Alt+T');
         setupMaximizeKeyBinding(settings.localHotkeys?.maximize || 'Ctrl+F');
+        setupNewCardKeyBinding();
 
         const state = await window.whiteboardAPI.readState();
 
@@ -2310,6 +2704,29 @@
           if (!item.timerTotal) item.timerTotal = 0;
           if (!item.timerRunning) item.timerRunning = false;
           if (item.timerStartedAt && !item.timerRunning) item.timerStartedAt = null;
+          
+          if (!item.attachments) item.attachments = [];
+          if (!item.thumbnailAssetId) {
+            if (item.assetId) {
+              item.thumbnailAssetId = item.assetId;
+            }
+          }
+          
+          if (item.attachments.length === 0 && item.assetId) {
+            item.attachments = [item.assetId];
+            if (!item.thumbnailAssetId) {
+              item.thumbnailAssetId = item.assetId;
+            }
+          }
+          
+          if (item.type !== 'card' && item.type !== 'image' && item.type !== 'file') {
+            if (item.attachments.length > 0) {
+              const firstAssetId = item.attachments[0];
+              const ext = (item.originalName || '').split('.').pop().toLowerCase();
+              item.type = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'].includes(ext) ? 'image' : 'file';
+            }
+          }
+
           if (item.groupId && item.groupName) {
             const existingGroup = groups.find(g => g.id === item.groupId);
             if (!existingGroup) {
@@ -2326,14 +2743,9 @@
         updateZoomDisplay();
 
         for (const item of items) {
-          if (item.archived) {
-            const el = document.createElement('div');
-            el.dataset.id = item.assetId || item.id;
-            el.style.display = 'none';
-            whiteboard.appendChild(el);
-            continue;
-          }
-          if (item.type === 'image') {
+          if (item.type === 'card') {
+            await createCardElement(item);
+          } else if (item.type === 'image') {
             await createImageElement(item);
           } else {
             await createFileElement(item);
@@ -2387,19 +2799,20 @@
       const action = undoStack.pop();
       if (action.type === 'delete') {
         for (const itemData of action.items) {
-          const container = itemData.type === 'image'
-            ? createImageContainer(itemData.id, itemData.assetId, itemData.originalName)
-            : createFileContainer(itemData.id, itemData.assetId, itemData.originalName);
+          let container;
+          if (itemData.type === 'card') {
+            container = createCardContainer(itemData.id, itemData);
+          } else if (itemData.type === 'image') {
+            container = createImageContainer(itemData.id, itemData);
+          } else {
+            container = createFileContainer(itemData.id, itemData);
+          }
           container.style.left = itemData.x + 'px';
           container.style.top = itemData.y + 'px';
           container.style.width = itemData.width + 'px';
           container.style.height = itemData.height + 'px';
           whiteboard.appendChild(container);
-          if (itemData.archived) {
-            container.style.opacity = '0.3';
-            container.style.filter = 'grayscale(100%)';
-          }
-          updateTimerDisplay(itemData.assetId || itemData.id);
+          updateTimerDisplay(itemData.id);
           items.push(itemData);
         }
         updateItemCount();
@@ -2452,19 +2865,58 @@
       input.click();
     }
 
-    async function createItemOnWhiteboard(buffer, filename) {
-      const id = `item_${itemIdCounter++}`;
+    async function createItemOnWhiteboard(buffer, filename, targetCardId = null) {
       const ext = filename.split('.').pop().toLowerCase();
       const isImage = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'].includes(ext);
 
       const assetResult = await window.whiteboardAPI.addAsset(Array.from(buffer), filename);
 
-      const container = isImage
-        ? createImageContainer(id, assetResult.assetId, filename)
-        : createFileContainer(id, assetResult.assetId, filename);
+      let newItem;
+      let container;
+      let centerX, centerY;
 
-      const centerX = (window.innerWidth / 2 - panX) / currentZoom - 100;
-      const centerY = (window.innerHeight / 2 - panY) / currentZoom - 100;
+      if (targetCardId) {
+        const card = items.find(i => i.id === targetCardId || i.assetId === targetCardId);
+        if (card) {
+          await window.whiteboardAPI.attachAssetToCard(targetCardId, assetResult.assetId);
+          card.attachments.push(assetResult.assetId);
+          if (!card.thumbnailAssetId) {
+            card.thumbnailAssetId = assetResult.assetId;
+          }
+          scheduleSave();
+          return;
+        }
+      }
+
+      const id = `item_${itemIdCounter++}`;
+      const itemAssetId = assetResult.assetId;
+      
+      newItem = {
+        id: id,
+        assetId: itemAssetId,
+        originalName: filename,
+        cardName: '',
+        type: isImage ? 'image' : 'file',
+        x: 0,
+        y: 0,
+        width: 0,
+        height: 0,
+        timerTotal: 0,
+        timerRunning: false,
+        timerStartedAt: null,
+        cardTags: [],
+        cardAnnotation: '',
+        cardUrl: '',
+        attachments: [itemAssetId],
+        thumbnailAssetId: itemAssetId
+      };
+
+      container = isImage
+        ? createImageContainer(id, newItem)
+        : createFileContainer(id, newItem);
+
+      centerX = (window.innerWidth / 2 - panX) / currentZoom - 100;
+      centerY = (window.innerHeight / 2 - panY) / currentZoom - 100;
 
       container.style.left = centerX + 'px';
       container.style.top = centerY + 'px';
@@ -2480,26 +2932,9 @@
         });
       }
 
-      const newItem = {
-        id: id,
-        assetId: assetResult.assetId,
-        originalName: filename,
-        cardName: '',
-        type: isImage ? 'image' : 'file',
-        x: centerX,
-        y: centerY,
-        width: 0,
-        height: 0,
-        timerTotal: 0,
-        timerRunning: false,
-        timerStartedAt: null,
-        cardTags: [],
-        cardAnnotation: '',
-        cardUrl: ''
-      };
       items.push(newItem);
 
-      updateTimerDisplay(assetResult.assetId);
+      updateTimerDisplay(itemAssetId);
 
       const width = isImage ? Math.min(container.offsetWidth, 400) : 120;
       const height = isImage ? Math.min(container.offsetHeight, 400) : 120;
@@ -2507,6 +2942,46 @@
       container.style.height = height + 'px';
       newItem.width = width;
       newItem.height = height;
+      newItem.x = centerX;
+      newItem.y = centerY;
+
+      selectItem(container);
+      updateItemCount();
+      scheduleSave();
+    }
+
+    async function createEmptyCard() {
+      const result = await window.whiteboardAPI.createEmptyCard({ cardName: '' });
+      if (!result || !result.assetId) {
+        console.error('Failed to create empty card');
+        return;
+      }
+
+      const { assetId, item } = result;
+      const id = `item_${itemIdCounter++}`;
+      
+      const newItem = {
+        ...item,
+        id: id
+      };
+
+      const container = createCardContainer(id, newItem);
+
+      const centerX = (window.innerWidth / 2 - panX) / currentZoom - 100;
+      const centerY = (window.innerHeight / 2 - panY) / currentZoom - 100;
+
+      container.style.left = centerX + 'px';
+      container.style.top = centerY + 'px';
+      container.style.width = '200px';
+      container.style.height = '150px';
+
+      newItem.x = centerX;
+      newItem.y = centerY;
+      newItem.width = 200;
+      newItem.height = 150;
+
+      whiteboard.appendChild(container);
+      items.push(newItem);
 
       selectItem(container);
       updateItemCount();
@@ -2533,12 +3008,12 @@
       }
     }
 
-    function createImageContainer(id, assetId, originalName) {
+    function createImageContainer(id, item) {
       const container = document.createElement('div');
       container.className = 'image-item';
-      container.dataset.id = assetId;
-      container.dataset.assetId = assetId;
-      container.dataset.originalName = originalName || '';
+      container.dataset.id = item.id;
+      container.dataset.assetId = item.assetId || item.id;
+      container.dataset.itemId = item.id;
       container.style.zIndex = zIndex++;
 
       const topBar = document.createElement('div');
@@ -2547,17 +3022,17 @@
 
       const titleSpan = document.createElement('span');
       titleSpan.className = 'card-title';
-      titleSpan.textContent = originalName || '未命名';
+      titleSpan.textContent = item.cardName || item.originalName || '未命名';
       titleSpan.style.cssText = 'color:#fff;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100px;';
 
       const checkBtn = document.createElement('button');
       checkBtn.className = 'check-btn';
-      checkBtn.textContent = '\u2610';
+      checkBtn.textContent = item.archived ? '\u2611' : '\u2610';
       checkBtn.title = '标记完成';
       checkBtn.style.cssText = 'width:20px;height:20px;border:none;background:transparent;cursor:pointer;font-size:14px;color:#fff;';
       checkBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        toggleArchive(assetId);
+        toggleArchive(item.assetId || item.id);
       });
 
       topBar.appendChild(titleSpan);
@@ -2570,16 +3045,21 @@
       imgWrapper.appendChild(img);
       container.appendChild(imgWrapper);
 
+      const thumbAssetId = item.thumbnailAssetId || item.assetId;
       const loadImg = async () => {
-        const thumbUrl = await window.whiteboardAPI.getAssetThumbnail(assetId);
-        if (thumbUrl) {
-          img.src = thumbUrl;
-        } else if (assetId && assetId.startsWith('item_')) {
-          const dataUrl = await window.whiteboardAPI.readFileAsBase64(assetId);
-          if (dataUrl) img.src = dataUrl;
+        if (thumbAssetId) {
+          const thumbUrl = await window.whiteboardAPI.getAssetThumbnail(thumbAssetId);
+          if (thumbUrl) {
+            img.src = thumbUrl;
+          }
         }
       };
       loadImg();
+
+      if (item.archived) {
+        container.style.opacity = '0.3';
+        container.style.filter = 'grayscale(100%)';
+      }
 
       const bottomBar = document.createElement('div');
       bottomBar.className = 'card-bottom-bar';
@@ -2595,7 +3075,7 @@
       timerBtn.style.cssText = 'width:20px;height:20px;border:none;background:rgba(255,255,255,0.2);border-radius:50%;cursor:pointer;font-size:10px;color:#fff;';
       timerBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        toggleTimer(assetId);
+        toggleTimer(item.assetId || item.id);
       });
 
       bottomBar.appendChild(timerDisplay);
@@ -2616,27 +3096,53 @@
         e.stopPropagation();
         selectItem(container);
         window.whiteboardAPI.showCardContextMenu({
-          id: id,
-          assetId: assetId,
-          originalName: originalName || '',
+          id: item.id,
+          assetId: item.assetId || item.id,
+          originalName: item.originalName || '',
           itemType: 'image'
         });
+      });
+
+      container.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        e.dataTransfer.dropEffect = 'copy';
+      });
+
+      container.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const files = e.dataTransfer.files;
+        if (files && files.length > 0) {
+          for (const file of files) {
+            const arrayBuffer = await file.arrayBuffer();
+            const buffer = new Uint8Array(arrayBuffer);
+            const assetResult = await window.whiteboardAPI.addAsset(Array.from(buffer), file.name);
+            await window.whiteboardAPI.attachAssetToCard(item.id, assetResult.assetId);
+            if (!item.attachments) item.attachments = [];
+            item.attachments.push(assetResult.assetId);
+            if (!item.thumbnailAssetId) {
+              item.thumbnailAssetId = assetResult.assetId;
+            }
+          }
+          scheduleSave();
+          refreshWhiteboardItem(item);
+        }
       });
 
       return container;
     }
 
-    function createFileContainer(id, assetId, originalName) {
+    function createFileContainer(id, item) {
       const container = document.createElement('div');
       container.className = 'file-item';
-      container.dataset.id = assetId;
-      container.dataset.assetId = assetId;
+      container.dataset.id = item.id;
+      container.dataset.assetId = item.assetId || item.id;
+      container.dataset.itemId = item.id;
       container.style.zIndex = zIndex++;
       container.style.display = 'flex';
       container.style.flexDirection = 'column';
       container.style.overflow = 'hidden';
-
-      const ext = originalName ? '.' + originalName.split('.').pop().toLowerCase() : '';
 
       const topBar = document.createElement('div');
       topBar.className = 'card-top-bar';
@@ -2644,17 +3150,17 @@
 
       const titleSpan = document.createElement('span');
       titleSpan.className = 'card-title';
-      titleSpan.textContent = originalName || '未命名';
+      titleSpan.textContent = item.cardName || item.originalName || '未命名';
       titleSpan.style.cssText = 'color:#fff;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100px;';
 
       const checkBtn = document.createElement('button');
       checkBtn.className = 'check-btn';
-      checkBtn.textContent = '\u2610';
+      checkBtn.textContent = item.archived ? '\u2611' : '\u2610';
       checkBtn.title = '标记完成';
       checkBtn.style.cssText = 'width:20px;height:20px;border:none;background:transparent;cursor:pointer;font-size:14px;color:#fff;';
       checkBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        toggleArchive(assetId);
+        toggleArchive(item.assetId || item.id);
       });
 
       topBar.appendChild(titleSpan);
@@ -2670,28 +3176,42 @@
       thumbWrapper.style.justifyContent = 'center';
       thumbWrapper.style.overflow = 'hidden';
 
+      const thumbAssetId = item.thumbnailAssetId || item.assetId;
       const loadFileContent = async () => {
-        const thumbUrl = await window.whiteboardAPI.getAssetThumbnail(assetId);
-        if (thumbUrl) {
-          const img = document.createElement('img');
-          img.className = 'file-thumb';
-          img.style.maxWidth = '100%';
-          img.style.maxHeight = '100%';
-          img.style.objectFit = 'contain';
-          img.style.pointerEvents = 'none';
-          thumbWrapper.appendChild(img);
-          img.src = thumbUrl;
+        if (thumbAssetId) {
+          const thumbUrl = await window.whiteboardAPI.getAssetThumbnail(thumbAssetId);
+          if (thumbUrl) {
+            const img = document.createElement('img');
+            img.className = 'file-thumb';
+            img.style.maxWidth = '100%';
+            img.style.maxHeight = '100%';
+            img.style.objectFit = 'contain';
+            img.style.pointerEvents = 'none';
+            thumbWrapper.appendChild(img);
+            img.src = thumbUrl;
+          } else {
+            const iconDiv = document.createElement('div');
+            iconDiv.className = 'icon';
+            iconDiv.style.fontSize = '48px';
+            iconDiv.textContent = getIconForFile(item.originalName);
+            thumbWrapper.appendChild(iconDiv);
+          }
         } else {
           const iconDiv = document.createElement('div');
           iconDiv.className = 'icon';
           iconDiv.style.fontSize = '48px';
-          iconDiv.textContent = getIconForFile(originalName);
+          iconDiv.textContent = getIconForFile(item.originalName);
           thumbWrapper.appendChild(iconDiv);
         }
       };
       loadFileContent();
 
       container.appendChild(thumbWrapper);
+
+      if (item.archived) {
+        container.style.opacity = '0.3';
+        container.style.filter = 'grayscale(100%)';
+      }
 
       const bottomBar = document.createElement('div');
       bottomBar.className = 'card-bottom-bar';
@@ -2707,7 +3227,7 @@
       timerBtn.style.cssText = 'width:20px;height:20px;border:none;background:rgba(255,255,255,0.2);border-radius:50%;cursor:pointer;font-size:10px;color:#fff;';
       timerBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        toggleTimer(assetId);
+        toggleTimer(item.assetId || item.id);
       });
 
       bottomBar.appendChild(timerDisplay);
@@ -2724,57 +3244,224 @@
 
       container.addEventListener('mousedown', onMouseDown);
       container.addEventListener('dblclick', async () => {
-        await window.whiteboardAPI.openFile(assetId);
+        if (thumbAssetId) {
+          await window.whiteboardAPI.openFile(thumbAssetId);
+        }
       });
       container.addEventListener('contextmenu', (e) => {
         e.preventDefault();
         e.stopPropagation();
         selectItem(container);
         window.whiteboardAPI.showCardContextMenu({
-          id: id,
-          assetId: assetId,
-          originalName: originalName || '',
+          id: item.id,
+          assetId: item.assetId || item.id,
+          originalName: item.originalName || '',
           itemType: 'file'
         });
+      });
+
+      container.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        e.dataTransfer.dropEffect = 'copy';
+      });
+
+      container.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const files = e.dataTransfer.files;
+        if (files && files.length > 0) {
+          for (const file of files) {
+            const arrayBuffer = await file.arrayBuffer();
+            const buffer = new Uint8Array(arrayBuffer);
+            const assetResult = await window.whiteboardAPI.addAsset(Array.from(buffer), file.name);
+            await window.whiteboardAPI.attachAssetToCard(item.id, assetResult.assetId);
+            if (!item.attachments) item.attachments = [];
+            item.attachments.push(assetResult.assetId);
+            if (!item.thumbnailAssetId) {
+              item.thumbnailAssetId = assetResult.assetId;
+            }
+          }
+          scheduleSave();
+          refreshWhiteboardItem(item);
+        }
+      });
+
+      return container;
+    }
+
+    function createCardContainer(id, item) {
+      const container = document.createElement('div');
+      container.className = 'card-item';
+      container.dataset.id = item.id;
+      container.dataset.assetId = item.assetId || item.id;
+      container.dataset.itemId = item.id;
+      container.style.zIndex = zIndex++;
+      container.style.display = 'flex';
+      container.style.flexDirection = 'column';
+      container.style.overflow = 'hidden';
+      container.style.background = '#2d2d2d';
+      container.style.borderRadius = '16px';
+      container.style.boxShadow = '0 2px 8px rgba(0,0,0,0.4)';
+
+      const topBar = document.createElement('div');
+      topBar.className = 'card-top-bar';
+      topBar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(0,0,0,0.3);flex-shrink:0;';
+
+      const titleSpan = document.createElement('span');
+      titleSpan.className = 'card-title';
+      titleSpan.textContent = item.cardName || '新建卡片';
+      titleSpan.style.cssText = 'color:#fff;font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;';
+
+      const checkBtn = document.createElement('button');
+      checkBtn.className = 'check-btn';
+      checkBtn.textContent = item.archived ? '\u2611' : '\u2610';
+      checkBtn.title = '标记完成';
+      checkBtn.style.cssText = 'width:20px;height:20px;border:none;background:transparent;cursor:pointer;font-size:14px;color:#fff;';
+      checkBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleArchive(item.assetId || item.id);
+      });
+
+      topBar.appendChild(titleSpan);
+      topBar.appendChild(checkBtn);
+      container.appendChild(topBar);
+
+      const contentArea = document.createElement('div');
+      contentArea.className = 'card-content-area';
+      contentArea.style.flex = '1';
+      contentArea.style.display = 'flex';
+      contentArea.style.alignItems = 'center';
+      contentArea.style.justifyContent = 'center';
+      contentArea.style.padding = '12px';
+      contentArea.style.color = '#666';
+      contentArea.style.fontSize = '11px';
+      contentArea.style.textAlign = 'center';
+      contentArea.style.minHeight = '60px';
+      contentArea.textContent = item.cardAnnotation || '拖拽文件到此处添加附件';
+      container.appendChild(contentArea);
+
+      if (item.archived) {
+        container.style.opacity = '0.3';
+        container.style.filter = 'grayscale(100%)';
+      }
+
+      const bottomBar = document.createElement('div');
+      bottomBar.className = 'card-bottom-bar';
+      bottomBar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:rgba(0,0,0,0.3);flex-shrink:0;';
+
+      const timerDisplay = document.createElement('span');
+      timerDisplay.className = 'timer-display';
+      timerDisplay.textContent = '00:00:00';
+
+      const timerBtn = document.createElement('button');
+      timerBtn.className = 'timer-btn';
+      timerBtn.textContent = '\u25B6';
+      timerBtn.style.cssText = 'width:20px;height:20px;border:none;background:rgba(255,255,255,0.2);border-radius:50%;cursor:pointer;font-size:10px;color:#fff;';
+      timerBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleTimer(item.assetId || item.id);
+      });
+
+      bottomBar.appendChild(timerDisplay);
+      bottomBar.appendChild(timerBtn);
+      container.appendChild(bottomBar);
+
+      const handles = ['nw', 'ne', 'sw', 'se'];
+      handles.forEach(pos => {
+        const handle = document.createElement('div');
+        handle.className = `resize-handle ${pos}`;
+        handle.dataset.pos = pos;
+        container.appendChild(handle);
+      });
+
+      container.addEventListener('mousedown', onMouseDown);
+      container.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        selectItem(container);
+        window.whiteboardAPI.showCardContextMenu({
+          id: item.id,
+          assetId: item.assetId || item.id,
+          originalName: item.cardName || '',
+          itemType: 'card'
+        });
+      });
+
+      container.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        e.dataTransfer.dropEffect = 'copy';
+      });
+
+      container.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const files = e.dataTransfer.files;
+        if (files && files.length > 0) {
+          for (const file of files) {
+            const arrayBuffer = await file.arrayBuffer();
+            const buffer = new Uint8Array(arrayBuffer);
+            const assetResult = await window.whiteboardAPI.addAsset(Array.from(buffer), file.name);
+            await window.whiteboardAPI.attachAssetToCard(item.id, assetResult.assetId);
+            item.attachments.push(assetResult.assetId);
+            if (!item.thumbnailAssetId) {
+              item.thumbnailAssetId = assetResult.assetId;
+              const img = contentArea.querySelector('img');
+              if (img) {
+                const thumbUrl = await window.whiteboardAPI.getAssetThumbnail(assetResult.assetId);
+                if (thumbUrl) img.src = thumbUrl;
+              } else {
+                contentArea.innerHTML = '';
+                contentArea.style.padding = '0';
+                const img = document.createElement('img');
+                img.style.maxWidth = '100%';
+                img.style.maxHeight = '100%';
+                img.style.objectFit = 'contain';
+                const thumbUrl = await window.whiteboardAPI.getAssetThumbnail(assetResult.assetId);
+                img.src = thumbUrl || '';
+                contentArea.appendChild(img);
+              }
+            }
+          }
+          scheduleSave();
+        }
       });
 
       return container;
     }
 
     async function createImageElement(item) {
-      const assetId = item.assetId || item.file;
-      const container = createImageContainer(item.id, assetId, item.originalName);
+      const container = createImageContainer(item.id, item);
       container.style.width = item.width + 'px';
       container.style.height = item.height + 'px';
       container.style.left = item.x + 'px';
       container.style.top = item.y + 'px';
       
-      if (item.archived) {
-        container.style.opacity = '0.3';
-        container.style.filter = 'grayscale(100%)';
-      }
-      
       whiteboard.appendChild(container);
-
-      updateTimerDisplay(item.assetId || item.id);
+      updateTimerDisplay(item.id);
     }
 
     async function createFileElement(item) {
-      const assetId = item.assetId || item.file;
-      const container = createFileContainer(item.id, assetId, item.originalName);
+      const container = createFileContainer(item.id, item);
       container.style.width = item.width + 'px';
       container.style.height = item.height + 'px';
       container.style.left = item.x + 'px';
       container.style.top = item.y + 'px';
       
-      if (item.archived) {
-        container.style.opacity = '0.3';
-        container.style.filter = 'grayscale(100%)';
-      }
+      whiteboard.appendChild(container);
+      updateTimerDisplay(item.id);
+    }
+
+    async function createCardElement(item) {
+      const container = createCardContainer(item.id, item);
+      container.style.width = item.width + 'px';
+      container.style.height = item.height + 'px';
+      container.style.left = item.x + 'px';
+      container.style.top = item.y + 'px';
       
       whiteboard.appendChild(container);
-
-      updateTimerDisplay(item.assetId || item.id);
+      updateTimerDisplay(item.id);
     }
 
     function selectItem(item, addToSelection = false) {
@@ -3024,7 +3711,15 @@
         if (item) {
           pushUndo({ type: 'delete', items: [{ ...item }] });
           el.remove();
-          await window.whiteboardAPI.deleteItemState(id);
+          
+          const attachments = item.attachments || [];
+          for (const assetId of attachments) {
+            await window.whiteboardAPI.deleteAsset(assetId);
+          }
+          if (item.assetId && !attachments.includes(item.assetId)) {
+            await window.whiteboardAPI.deleteAsset(item.assetId);
+          }
+          
           items = items.filter(i => (i.assetId || i.id) !== id);
         }
       });
@@ -3185,6 +3880,55 @@
 
     document.addEventListener('paste', async (e) => {
       e.preventDefault();
+
+      const hasSelection = selectedItem !== null;
+
+      if (hasSelection) {
+        const selectedId = selectedItem.dataset.itemId || selectedItem.dataset.id;
+        const item = items.find(i => i.id === selectedId || i.assetId === selectedId);
+        
+        if (item) {
+          try {
+            const filesData = await window.whiteboardAPI.readClipboardFiles();
+            if (filesData && filesData.length > 0) {
+              for (const fileData of filesData) {
+                const buffer = Uint8Array.from(atob(fileData.buffer), c => c.charCodeAt(0));
+                const assetResult = await window.whiteboardAPI.addAsset(Array.from(buffer), fileData.filename);
+                await window.whiteboardAPI.attachAssetToCard(item.id, assetResult.assetId);
+                if (!item.attachments) item.attachments = [];
+                item.attachments.push(assetResult.assetId);
+                if (!item.thumbnailAssetId) {
+                  item.thumbnailAssetId = assetResult.assetId;
+                }
+              }
+              scheduleSave();
+              refreshWhiteboardItem(item);
+              return;
+            }
+          } catch (err) {
+            console.error('readClipboardFiles error:', err);
+          }
+
+          try {
+            const clipboardData = await window.whiteboardAPI.readClipboardImage();
+            if (clipboardData && clipboardData.buffer) {
+              const buffer = Uint8Array.from(atob(clipboardData.buffer), c => c.charCodeAt(0));
+              const assetResult = await window.whiteboardAPI.addAsset(Array.from(buffer), clipboardData.filename);
+              await window.whiteboardAPI.attachAssetToCard(item.id, assetResult.assetId);
+              if (!item.attachments) item.attachments = [];
+              item.attachments.push(assetResult.assetId);
+              if (!item.thumbnailAssetId) {
+                item.thumbnailAssetId = assetResult.assetId;
+              }
+              scheduleSave();
+              refreshWhiteboardItem(item);
+              return;
+            }
+          } catch (err) {
+            console.error('readClipboardImage error:', err);
+          }
+        }
+      }
 
       try {
         const filesData = await window.whiteboardAPI.readClipboardFiles();

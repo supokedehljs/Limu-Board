@@ -832,3 +832,198 @@ ipcMain.handle('load-tag-meta', async () => {
     return null;
   }
 });
+
+ipcMain.handle('create-empty-card', async (event, { cardName }) => {
+  try {
+    const assetsPath = await getAssetsPath();
+    const assetId = generateAssetId();
+    const assetDir = path.join(assetsPath, assetId);
+    await fs.mkdir(assetDir, { recursive: true });
+
+    const newItem = {
+      id: assetId,
+      assetId: assetId,
+      originalName: '',
+      cardName: cardName || '',
+      type: 'card',
+      x: 0,
+      y: 0,
+      width: 200,
+      height: 150,
+      timerTotal: 0,
+      timerRunning: false,
+      timerStartedAt: null,
+      cardTags: [],
+      cardAnnotation: '',
+      cardUrl: '',
+      addedTime: Date.now(),
+      attachments: [],
+      thumbnailAssetId: null
+    };
+
+    await fs.writeFile(path.join(assetDir, 'metadata.json'), JSON.stringify(newItem, null, 2));
+    return { assetId, item: newItem };
+  } catch (err) {
+    console.error('create-empty-card error:', err);
+    throw err;
+  }
+});
+
+ipcMain.handle('attach-asset-to-card', async (event, { cardId, assetId }) => {
+  try {
+    const assetsPath = await getAssetsPath();
+    const cardDir = path.join(assetsPath, cardId);
+    const metadataPath = path.join(cardDir, 'metadata.json');
+    
+    let metadata;
+    try {
+      const data = await fs.readFile(metadataPath, 'utf-8');
+      metadata = JSON.parse(data);
+    } catch {
+      return { success: false, error: 'Card not found' };
+    }
+
+    if (!metadata.attachments) metadata.attachments = [];
+    if (!metadata.attachments.includes(assetId)) {
+      metadata.attachments.push(assetId);
+    }
+    if (!metadata.thumbnailAssetId && assetId) {
+      metadata.thumbnailAssetId = assetId;
+    }
+
+    await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
+    return { success: true, metadata };
+  } catch (err) {
+    console.error('attach-asset-to-card error:', err);
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('detach-asset-from-card', async (event, { cardId, assetId }) => {
+  try {
+    const assetsPath = await getAssetsPath();
+    const cardDir = path.join(assetsPath, cardId);
+    const metadataPath = path.join(cardDir, 'metadata.json');
+    
+    let metadata;
+    try {
+      const data = await fs.readFile(metadataPath, 'utf-8');
+      metadata = JSON.parse(data);
+    } catch {
+      return { success: false, error: 'Card not found' };
+    }
+
+    if (!metadata.attachments) metadata.attachments = [];
+    metadata.attachments = metadata.attachments.filter(a => a !== assetId);
+    
+    if (metadata.thumbnailAssetId === assetId) {
+      metadata.thumbnailAssetId = metadata.attachments.length > 0 ? metadata.attachments[0] : null;
+    }
+
+    await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
+    return { success: true, metadata };
+  } catch (err) {
+    console.error('detach-asset-from-card error:', err);
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('set-card-thumbnail-asset', async (event, { cardId, thumbnailAssetId }) => {
+  try {
+    const assetsPath = await getAssetsPath();
+    const cardDir = path.join(assetsPath, cardId);
+    const metadataPath = path.join(cardDir, 'metadata.json');
+    
+    let metadata;
+    try {
+      const data = await fs.readFile(metadataPath, 'utf-8');
+      metadata = JSON.parse(data);
+    } catch {
+      return { success: false, error: 'Card not found' };
+    }
+
+    metadata.thumbnailAssetId = thumbnailAssetId;
+    await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
+    return { success: true, metadata };
+  } catch (err) {
+    console.error('set-card-thumbnail-asset error:', err);
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('delete-asset', async (event, assetId) => {
+  try {
+    const assetsPath = await getAssetsPath();
+    const assetDir = path.join(assetsPath, assetId);
+    
+    try {
+      await fs.access(assetDir);
+    } catch {
+      return { success: false, error: 'Asset not found' };
+    }
+
+    await fs.rm(assetDir, { recursive: true, force: true });
+    return { success: true };
+  } catch (err) {
+    console.error('delete-asset error:', err);
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('get-attachment-thumbnails', async (event, assetIds) => {
+  try {
+    const results = {};
+    for (const assetId of assetIds) {
+      const thumbUrl = await getAssetThumbnail(assetId);
+      results[assetId] = thumbUrl;
+    }
+    return results;
+  } catch (err) {
+    console.error('get-attachment-thumbnails error:', err);
+    return {};
+  }
+});
+
+async function getAssetThumbnail(assetId) {
+  try {
+    const assetsPath = await getAssetsPath();
+    const assetDir = path.join(assetsPath, assetId);
+    
+    try {
+      await fs.access(assetDir);
+    } catch {
+      return null;
+    }
+
+    const thumbnailPath = path.join(assetDir, 'thumbnail.png');
+    try {
+      await fs.access(thumbnailPath);
+      const buffer = await fs.readFile(thumbnailPath);
+      return `data:image/png;base64,${buffer.toString('base64')}`;
+    } catch {}
+
+    const entries = await fs.readdir(assetDir);
+    const originalFile = entries.find(f => f.startsWith('original'));
+    if (!originalFile) return null;
+
+    const ext = path.extname(originalFile).toLowerCase();
+    const imageExts = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'];
+    if (!imageExts.includes(ext)) return null;
+
+    const buffer = await fs.readFile(path.join(assetDir, originalFile));
+    const resized = resizeImageToMax(buffer, 512);
+    if (resized) {
+      const resizedBuffer = resized.toPNG();
+      return `data:image/png;base64,${resizedBuffer.toString('base64')}`;
+    }
+
+    const mimeMap = {
+      '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
+      '.gif': 'image/gif', '.bmp': 'image/bmp', '.webp': 'image/webp'
+    };
+    const mime = mimeMap[ext] || 'application/octet-stream';
+    return `data:${mime};base64,${buffer.toString('base64')}`;
+  } catch (err) {
+    return null;
+  }
+}

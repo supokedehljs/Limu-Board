@@ -41,5 +41,11 @@ contextBridge.exposeInMainWorld('whiteboardAPI', {
   onRemoveFromGroup: (callback) => ipcRenderer.on('remove-from-group', (e, data) => callback(data)),
   onSelectSameTags: (callback) => ipcRenderer.on('select-same-tags', (e, data) => callback(data)),
   saveTagMeta: (meta) => ipcRenderer.invoke('save-tag-meta', meta),
-  loadTagMeta: () => ipcRenderer.invoke('load-tag-meta')
+  loadTagMeta: () => ipcRenderer.invoke('load-tag-meta'),
+  createEmptyCard: (cardName) => ipcRenderer.invoke('create-empty-card', { cardName }),
+  attachAssetToCard: (cardId, assetId) => ipcRenderer.invoke('attach-asset-to-card', { cardId, assetId }),
+  detachAssetFromCard: (cardId, assetId) => ipcRenderer.invoke('detach-asset-from-card', { cardId, assetId }),
+  setCardThumbnailAsset: (cardId, thumbnailAssetId) => ipcRenderer.invoke('set-card-thumbnail-asset', { cardId, thumbnailAssetId }),
+  deleteAsset: (assetId) => ipcRenderer.invoke('delete-asset', assetId),
+  getAttachmentThumbnails: (assetIds) => ipcRenderer.invoke('get-attachment-thumbnails', assetIds)
 });
