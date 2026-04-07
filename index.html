@@ -209,13 +209,80 @@
       transform-origin: 0 0;
     }
 
+    .group-box {
+      position: absolute;
+      border: 2px solid;
+      border-radius: 20px;
+      pointer-events: auto;
+      cursor: pointer;
+      z-index: 0;
+    }
+
+    .group-box:hover {
+      border-width: 3px;
+    }
+
+    .group-box-label {
+      position: absolute;
+      top: -70px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: inherit;
+      color: white;
+      padding: 6px 16px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      white-space: nowrap;
+      text-align: center;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+      pointer-events: none;
+    }
+
+    .group-box-sub {
+      display: block;
+      font-size: 11px;
+      font-weight: normal;
+      opacity: 0.9;
+      margin-top: 2px;
+    }
+
+    .group-box:hover {
+      border-width: 3px;
+    }
+
+    .group-box-info {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, calc(-50% + 24px));
+      color: rgba(255,255,255,0.8);
+      font-size: 12px;
+      white-space: nowrap;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+      pointer-events: none;
+    }
+
+    .group-box-time {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, calc(-50% - 24px));
+      color: rgba(255,255,255,0.9);
+      font-size: 14px;
+      white-space: nowrap;
+      font-weight: 500;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+      pointer-events: none;
+    }
+
     .image-item {
       position: absolute;
       cursor: move;
       user-select: none;
       border: 2px solid transparent;
       background: #2d2d2d;
-      border-radius: 6px;
+      border-radius: 16px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.4);
       display: flex;
       flex-direction: column;
@@ -265,7 +332,7 @@
       user-select: none;
       border: 2px solid transparent;
       background: #2d2d2d;
-      border-radius: 8px;
+      border-radius: 16px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -297,6 +364,26 @@
       margin-bottom: 8px;
     }
 
+    .card-item {
+      position: absolute;
+      cursor: move;
+      user-select: none;
+      border: 2px solid transparent;
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+
+    .card-item:hover {
+      border-color: #4a90d9;
+    }
+
+    .card-item.selected {
+      border-color: #4a90d9;
+    }
+
     .card-timer {
       display: flex;
       align-items: center;
@@ -318,15 +405,18 @@
     }
 
     .timer-btn {
-      padding: 2px 8px;
+      width: 24px;
+      height: 24px;
       border: 1px solid #555;
       background: #3a3a3a;
-      border-radius: 3px;
+      border-radius: 50%;
       cursor: pointer;
-      font-size: 11px;
-      color: #ddd;
       transition: all 0.15s;
-      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: #ddd;
     }
 
     .timer-btn:hover {
@@ -343,14 +433,58 @@
       background: #c62828;
     }
 
-    .resize-handle {
-      display: none;
+    .archive-btn {
+      width: 24px;
+      height: 24px;
+      border: 1px solid #555;
+      background: #3a3a3a;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: #ddd;
+      margin-left: 4px;
     }
 
-    .resize-handle.se { display: none; }
-    .resize-handle.sw { display: none; }
-    .resize-handle.ne { display: none; }
-    .resize-handle.nw { display: none; }
+    .archive-btn:hover {
+      background: #4a4a4a;
+    }
+
+    .resize-handle {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      background: transparent;
+      border-radius: 2px;
+    }
+
+    .resize-handle.se { 
+      display: block;
+      right: -6px;
+      bottom: -6px;
+      cursor: se-resize; 
+    }
+    .resize-handle.sw { 
+      display: block;
+      left: -6px;
+      bottom: -6px;
+      cursor: sw-resize; 
+    }
+    .resize-handle.ne { 
+      display: block;
+      right: -6px;
+      top: -6px;
+      cursor: ne-resize; 
+    }
+    .resize-handle.nw { 
+      display: block;
+      left: -6px;
+      top: -6px;
+      cursor: nw-resize; 
+    }
 
     #hint {
       position: fixed;
@@ -461,11 +595,13 @@
     .todo-item {
       display: flex;
       align-items: center;
-      padding: 8px 10px;
-      border-radius: 4px;
+      padding: 10px 12px;
+      border-radius: 6px;
       cursor: pointer;
-      margin-bottom: 2px;
-      transition: background 0.1s;
+      margin-bottom: 4px;
+      transition: background 0.15s;
+      background: #2a2a2a;
+      gap: 12px;
     }
 
     .todo-item:hover {
@@ -474,32 +610,53 @@
 
     .todo-item.active {
       background: #2a3a4a;
+      border: 1px solid #4a90d9;
+    }
+
+    .todo-item.archived {
+      opacity: 0.5;
     }
 
     .todo-item-icon {
-      font-size: 16px;
-      margin-right: 8px;
+      font-size: 14px;
       flex-shrink: 0;
+      width: 20px;
+      text-align: center;
     }
 
-    .todo-item-info {
+    .todo-item-main {
       flex: 1;
       min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
     }
 
     .todo-item-name {
       color: #ddd;
-      font-size: 12px;
+      font-size: 14px;
+      font-weight: 500;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
-    .todo-item-timer {
+    .todo-item.archived .todo-item-name {
+      text-decoration: line-through;
+      color: #888;
+    }
+
+    .todo-item-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
       color: #777;
-      font-size: 10px;
+    }
+
+    .todo-item-timer {
       font-family: 'Consolas', monospace;
-      margin-top: 2px;
+      color: #999;
     }
 
     .todo-item-timer.running {
@@ -515,6 +672,122 @@
       border-radius: 50%;
       margin-right: 4px;
       vertical-align: middle;
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .todo-item-tag {
+      background: #2a3a4a;
+      color: #4a90d9;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-size: 10px;
+    }
+
+    .todo-item-annotation {
+      color: #777;
+      font-size: 11px;
+      margin-top: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .todo-item:hover .todo-item-annotation {
+      white-space: normal;
+      overflow: visible;
+    }
+
+    .todo-item-actions {
+      display: flex;
+      gap: 6px;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    .todo-item:hover .todo-item-actions {
+      opacity: 1;
+    }
+
+    .todo-item-btn {
+      width: 28px;
+      height: 28px;
+      border: none;
+      background: #3a3a3a;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 12px;
+      color: #aaa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+
+    .todo-item-btn:hover {
+      background: #4a4a4a;
+      color: #fff;
+    }
+
+    .todo-item-btn.timer-btn.running {
+      background: #e53935;
+      color: #fff;
+    }
+
+    .todo-item-btn.archive-btn {
+      font-size: 14px;
+    }
+
+    .todo-folder {
+      margin-bottom: 4px;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .todo-folder-header {
+      display: flex;
+      align-items: center;
+      padding: 8px 10px;
+      background: #2a2a2a;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .todo-folder-header:hover {
+      background: #333;
+    }
+
+    .todo-folder-icon {
+      margin-right: 8px;
+      font-size: 14px;
+    }
+
+    .todo-folder-name {
+      flex: 1;
+      color: #ddd;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .todo-folder-count {
+      color: #777;
+      font-size: 11px;
+      background: #3a3a3a;
+      padding: 2px 6px;
+      border-radius: 10px;
+    }
+
+    .todo-folder-body {
+      padding-left: 8px;
+      padding-top: 4px;
+    }
+
+    .todo-folder.collapsed .todo-folder-body {
+      display: none;
     }
 
     #propPanel {
@@ -699,6 +972,126 @@
       color: #fff;
       font-size: 11px;
       cursor: pointer;
+    }
+
+    .attachments-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .attachments-empty {
+      color: #666;
+      font-size: 11px;
+      padding: 8px 0;
+    }
+
+    .attachment-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px;
+      background: #2a2a2a;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .attachment-item:hover {
+      background: #333;
+    }
+
+    .attachment-item.is-thumb {
+      border-color: #4a90d9;
+    }
+
+    .attachment-thumb {
+      width: 36px;
+      height: 36px;
+      border-radius: 4px;
+      overflow: hidden;
+      background: #1a1a1a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .attachment-thumb img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    .attachment-icon {
+      font-size: 20px;
+    }
+
+    .attachment-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .attachment-name {
+      font-size: 10px;
+      color: #999;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .attachment-badge {
+      font-size: 9px;
+      color: #4a90d9;
+      margin-top: 2px;
+    }
+
+    .attachment-actions {
+      display: flex;
+      gap: 4px;
+    }
+
+    .attachment-action-btn {
+      width: 24px;
+      height: 24px;
+      border: none;
+      background: #3a3a3a;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 11px;
+      color: #888;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+
+    .attachment-action-btn:hover {
+      background: #4a4a4a;
+      color: #fff;
+    }
+
+    .attachment-action-btn.delete-btn:hover {
+      background: #e53935;
+    }
+
+    .add-attachment-btn {
+      width: 100%;
+      padding: 8px;
+      border: 1px dashed #555;
+      background: transparent;
+      color: #888;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.15s;
+    }
+
+    .add-attachment-btn:hover {
+      border-color: #4a90d9;
+      color: #4a90d9;
+      background: rgba(74, 144, 217, 0.1);
     }
 
     .prop-no-selection {
@@ -1087,6 +1480,10 @@
       <h3>待办列表</h3>
     </div>
     <input type="text" id="todoSearch" placeholder="搜索...">
+    <label style="display:flex;align-items:center;padding:8px 12px;font-size:12px;color:#999;">
+      <input type="checkbox" id="todoShowArchived" style="margin-right:6px;">
+      显示已归档
+    </label>
     <div id="todoList"></div>
   </div>
 
@@ -1275,46 +1672,179 @@
       }
     }
 
+    let expandedFolders = new Set(); // 跟踪展开的文件夹
+    
     function renderTodoList() {
       const listEl = document.getElementById('todoList');
       const searchVal = (document.getElementById('todoSearch').value || '').toLowerCase();
+      const showArchived = document.getElementById('todoShowArchived')?.checked || false;
+      
       const filtered = items.filter(item => {
+        if (!showArchived && item.archived) return false;
         const name = item.cardName || item.originalName || '';
         return name.toLowerCase().includes(searchVal);
       });
+      
       if (filtered.length === 0) {
         listEl.innerHTML = '<div style="color:#777;font-size:12px;padding:12px 0;text-align:center;">暂无待办</div>';
         return;
       }
-      listEl.innerHTML = '';
+      
+      const tagGroups = {};
+      const uncategorized = [];
+      
       for (const item of filtered) {
-        const el = document.createElement('div');
-        el.className = 'todo-item' + (selectedItem && selectedItem.dataset.id === item.id ? ' active' : '');
-        const icon = item.type === 'image' ? '\uD83D\uDDBC' : getIconForFile(item.originalName);
-        const timerText = getItemTimerDisplay(item);
-        const isRunning = item.timerRunning;
-        el.innerHTML = `
-          <span class="todo-item-icon">${icon}</span>
-          <div class="todo-item-info">
-            <div class="todo-item-name">${escapeHtml(item.cardName || item.originalName || '未命名')}</div>
-            <div class="todo-item-timer${isRunning ? ' running' : ''}">${timerText}</div>
+        const tags = item.cardTags || [];
+        if (tags.length === 0) {
+          uncategorized.push(item);
+        } else {
+          for (const tag of tags) {
+            if (!tagGroups[tag]) tagGroups[tag] = [];
+            tagGroups[tag].push(item);
+          }
+        }
+      }
+      
+      const sortedTags = Object.keys(tagGroups).sort((a, b) => tagGroups[b].length - tagGroups[a].length);
+      
+      listEl.innerHTML = '';
+      
+      if (uncategorized.length > 0) {
+        const folder = document.createElement('div');
+        folder.className = 'todo-folder';
+        const folderId = 'uncategorized';
+        if (expandedFolders.has(folderId)) {
+          folder.classList.remove('collapsed');
+        } else {
+          folder.classList.add('collapsed');
+        }
+        folder.innerHTML = `
+          <div class="todo-folder-header">
+            <span class="todo-folder-icon">📁</span>
+            <span class="todo-folder-name">未分类</span>
+            <span class="todo-folder-count">${uncategorized.length}</span>
           </div>
         `;
-        el.addEventListener('click', () => {
-          const container = whiteboard.querySelector(`[data-id="${item.id}"]`);
-          if (container) {
-            selectItem(container);
-            panX = window.innerWidth / 2 - item.x * currentZoom - item.width * currentZoom / 2;
-            panY = window.innerHeight / 2 - item.y * currentZoom - item.height * currentZoom / 2;
-            updateTransform();
-            scheduleSave();
+        const folderBody = document.createElement('div');
+        folderBody.className = 'todo-folder-body';
+        for (const item of uncategorized) {
+          folderBody.appendChild(createTodoItemElement(item));
+        }
+        folder.appendChild(folderBody);
+        folder.querySelector('.todo-folder-header').addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (folder.classList.contains('collapsed')) {
+            folder.classList.remove('collapsed');
+            expandedFolders.add(folderId);
+          } else {
+            folder.classList.add('collapsed');
+            expandedFolders.delete(folderId);
           }
         });
-        el.addEventListener('dblclick', () => {
-          window.whiteboardAPI.openFile(item.assetId);
-        });
-        listEl.appendChild(el);
+        listEl.appendChild(folder);
       }
+      
+      for (const tag of sortedTags) {
+        const folder = document.createElement('div');
+        folder.className = 'todo-folder';
+        const folderId = `tag-${tag}`;
+        if (expandedFolders.has(folderId)) {
+          folder.classList.remove('collapsed');
+        } else {
+          folder.classList.add('collapsed');
+        }
+        folder.innerHTML = `
+          <div class="todo-folder-header">
+            <span class="todo-folder-icon">📁</span>
+            <span class="todo-folder-name">${escapeHtml(tag)}</span>
+            <span class="todo-folder-count">${tagGroups[tag].length}</span>
+          </div>
+        `;
+        const folderBody = document.createElement('div');
+        folderBody.className = 'todo-folder-body';
+        for (const item of tagGroups[tag]) {
+          folderBody.appendChild(createTodoItemElement(item));
+        }
+        folder.appendChild(folderBody);
+        folder.querySelector('.todo-folder-header').addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (folder.classList.contains('collapsed')) {
+            folder.classList.remove('collapsed');
+            expandedFolders.add(folderId);
+          } else {
+            folder.classList.add('collapsed');
+            expandedFolders.delete(folderId);
+          }
+        });
+        listEl.appendChild(folder);
+      }
+    }
+    
+    function createTodoItemElement(item) {
+      const el = document.createElement('div');
+      el.className = 'todo-item';
+      if (selectedItem && (selectedItem.dataset.id === item.id || selectedItem.dataset.id === item.assetId)) {
+        el.classList.add('active');
+      }
+      if (item.archived) {
+        el.classList.add('archived');
+      }
+
+      const icon = item.type === 'image' ? '\uD83D\uDDBC' : getIconForFile(item.originalName);
+      const timerText = getItemTimerDisplay(item);
+      const isRunning = item.timerRunning;
+      const tags = item.cardTags || [];
+      const firstTag = tags.length > 0 ? tags[0] : '';
+      const annotation = item.cardAnnotation || '';
+
+      el.innerHTML = `
+        <span class="todo-item-icon">${icon}</span>
+        <div class="todo-item-main">
+          <div class="todo-item-name">${escapeHtml(item.cardName || item.originalName || '未命名')}</div>
+          <div class="todo-item-meta">
+            <span class="todo-item-timer${isRunning ? ' running' : ''}">${timerText}</span>
+            ${firstTag ? `<span class="todo-item-tag">${escapeHtml(firstTag)}</span>` : ''}
+            ${tags.length > 1 ? `<span class="todo-item-tag">+${tags.length - 1}</span>` : ''}
+          </div>
+          ${annotation ? `<div class="todo-item-annotation">${escapeHtml(annotation)}</div>` : ''}
+        </div>
+        <div class="todo-item-actions">
+          <button class="todo-item-btn timer-btn${isRunning ? ' running' : ''}" title="${isRunning ? '暂停' : '开始'}">
+            ${isRunning ? '\u25CF' : '\u25B6'}
+          </button>
+          <button class="todo-item-btn archive-btn" title="${item.archived ? '取消归档' : '归档'}">
+            ${item.archived ? '\u21A9' : '\u2610'}
+          </button>
+        </div>
+      `;
+
+      const timerBtn = el.querySelector('.timer-btn');
+      timerBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleTimer(item.assetId || item.id);
+      });
+
+      const archiveBtn = el.querySelector('.archive-btn');
+      archiveBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleArchive(item.assetId || item.id);
+      });
+
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const container = whiteboard.querySelector(`[data-id="${item.id}"]`) || whiteboard.querySelector(`[data-asset-id="${item.assetId}"]`);
+        if (container) {
+          selectItem(container, e.shiftKey);
+          panX = window.innerWidth / 2 - item.x * currentZoom - item.width * currentZoom / 2;
+          panY = window.innerHeight / 2 - item.y * currentZoom - item.height * currentZoom / 2;
+          updateTransform();
+          scheduleSave();
+        }
+      });
+      el.addEventListener('dblclick', () => {
+        window.whiteboardAPI.openFile(item.assetId);
+      });
+      return el;
     }
 
     function renderPropPanel(itemId) {
@@ -1325,12 +1855,12 @@
         return;
       }
 
-      const thumbnailHtml = item.type === 'image'
-        ? `<div class="prop-thumbnail"><img id="propThumbImg" src="" alt=""></div>`
-        : `<div class="prop-thumbnail"><div class="file-icon">${getIconForFile(item.originalName)}</div></div>`;
+      const attachments = item.attachments || [];
+      const attachmentsHtml = attachments.length > 0
+        ? `<div class="attachments-list" id="attachmentsList"></div>`
+        : `<div class="attachments-list" id="attachmentsList"><div class="attachments-empty">暂无附件</div></div>`;
 
       contentEl.innerHTML = `
-        ${thumbnailHtml}
         <div class="prop-section">
           <div class="prop-field">
             <label>卡片名称</label>
@@ -1340,10 +1870,12 @@
             <label>注释</label>
             <textarea id="propAnnotation">${escapeHtml(item.cardAnnotation || '')}</textarea>
           </div>
-          <div class="prop-field">
-            <label>链接</label>
-            <input type="text" id="propUrl" value="${escapeHtml(item.cardUrl || '')}" placeholder="https://...">
-          </div>
+        </div>
+        <div class="prop-section">
+          <div class="prop-section-title">附件 <span id="attachmentCount"></span></div>
+          ${attachmentsHtml}
+          <button class="add-attachment-btn" id="addAttachmentBtn">+ 添加附件</button>
+          <input type="file" id="attachmentFileInput" style="display:none;" multiple>
         </div>
         <div class="prop-section">
           <div class="prop-section-title">标签</div>
@@ -1357,16 +1889,8 @@
           <div class="prop-section-title">基本信息</div>
           <div class="prop-info-grid">
             <div class="prop-info-item">
-              <div class="label">类型</div>
-              <div class="value">${item.type === 'image' ? '图片' : '文件'}</div>
-            </div>
-            <div class="prop-info-item">
-              <div class="label">原始名称</div>
-              <div class="value">${escapeHtml(item.originalName || '-')}</div>
-            </div>
-            <div class="prop-info-item">
-              <div class="label">尺寸</div>
-              <div class="value">${Math.round(item.width)} × ${Math.round(item.height)}</div>
+              <div class="label">附件数</div>
+              <div class="value">${attachments.length}</div>
             </div>
             <div class="prop-info-item">
               <div class="label">计时</div>
@@ -1376,16 +1900,8 @@
         </div>
       `;
 
-      if (item.type === 'image') {
-        const thumbImg = document.getElementById('propThumbImg');
-        window.whiteboardAPI.getAssetThumbnail(item.assetId).then(url => {
-          if (url) {
-            thumbImg.src = url;
-          }
-        });
-      }
-
       renderTags(item);
+      renderAttachmentsList(item);
 
       const nameInput = document.getElementById('propCardName');
       nameInput.addEventListener('input', () => {
@@ -1400,12 +1916,6 @@
         scheduleSave();
       });
 
-      const urlInput = document.getElementById('propUrl');
-      urlInput.addEventListener('input', () => {
-        item.cardUrl = urlInput.value;
-        scheduleSave();
-      });
-
       const tagInput = document.getElementById('propTagInput');
       tagInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
@@ -1413,6 +1923,140 @@
           addTag();
         }
       });
+
+      const addAttachmentBtn = document.getElementById('addAttachmentBtn');
+      const attachmentFileInput = document.getElementById('attachmentFileInput');
+      if (addAttachmentBtn && attachmentFileInput) {
+        addAttachmentBtn.addEventListener('click', () => {
+          attachmentFileInput.click();
+        });
+        attachmentFileInput.addEventListener('change', async (e) => {
+          const files = e.target.files;
+          if (files && files.length > 0) {
+            for (const file of files) {
+              const arrayBuffer = await file.arrayBuffer();
+              const buffer = new Uint8Array(arrayBuffer);
+              const assetResult = await window.whiteboardAPI.addAsset(Array.from(buffer), file.name);
+              await window.whiteboardAPI.attachAssetToCard(item.id, assetResult.assetId);
+              if (!item.attachments) item.attachments = [];
+              item.attachments.push(assetResult.assetId);
+              if (!item.thumbnailAssetId) {
+                item.thumbnailAssetId = assetResult.assetId;
+              }
+            }
+            scheduleSave();
+            renderPropPanel(item.id);
+            refreshWhiteboardItem(item);
+          }
+        });
+      }
+    }
+
+    async function renderAttachmentsList(item) {
+      const listEl = document.getElementById('attachmentsList');
+      const countEl = document.getElementById('attachmentCount');
+      if (!listEl || !item) return;
+
+      const attachments = item.attachments || [];
+      if (countEl) countEl.textContent = `(${attachments.length})`;
+
+      if (attachments.length === 0) {
+        listEl.innerHTML = '<div class="attachments-empty">暂无附件</div>';
+        return;
+      }
+
+      listEl.innerHTML = '';
+      for (const assetId of attachments) {
+        const thumbUrl = await window.whiteboardAPI.getAssetThumbnail(assetId);
+        const isThumb = item.thumbnailAssetId === assetId;
+        
+        const el = document.createElement('div');
+        el.className = 'attachment-item' + (isThumb ? ' is-thumb' : '');
+        el.innerHTML = `
+          <div class="attachment-thumb">
+            ${thumbUrl ? `<img src="${thumbUrl}" alt="">` : '<div class="attachment-icon">📄</div>'}
+          </div>
+          <div class="attachment-info">
+            <div class="attachment-name">${assetId.substring(0, 12)}...</div>
+            ${isThumb ? '<div class="attachment-badge">封面</div>' : ''}
+          </div>
+          <div class="attachment-actions">
+            <button class="attachment-action-btn set-thumb-btn" title="设为封面">📌</button>
+            <button class="attachment-action-btn delete-btn" title="删除">✕</button>
+          </div>
+        `;
+
+        const setThumbBtn = el.querySelector('.set-thumb-btn');
+        setThumbBtn.addEventListener('click', async () => {
+          item.thumbnailAssetId = assetId;
+          await window.whiteboardAPI.setCardThumbnailAsset(item.id, assetId);
+          scheduleSave();
+          renderPropPanel(item.id);
+          refreshWhiteboardItem(item);
+        });
+
+        const deleteBtn = el.querySelector('.delete-btn');
+        deleteBtn.addEventListener('click', async () => {
+          await window.whiteboardAPI.detachAssetFromCard(item.id, assetId);
+          item.attachments = item.attachments.filter(a => a !== assetId);
+          if (item.thumbnailAssetId === assetId) {
+            item.thumbnailAssetId = item.attachments.length > 0 ? item.attachments[0] : null;
+          }
+          scheduleSave();
+          renderPropPanel(item.id);
+          refreshWhiteboardItem(item);
+        });
+
+        listEl.appendChild(el);
+      }
+    }
+
+    async function refreshWhiteboardItem(item) {
+      const container = whiteboard.querySelector(`[data-item-id="${item.id}"]`);
+      if (!container) return;
+
+      if (item.type === 'card') {
+        const contentArea = container.querySelector('.card-content-area');
+        if (contentArea) {
+          const thumbAssetId = item.thumbnailAssetId || item.attachments?.[0];
+          if (thumbAssetId) {
+            const thumbUrl = await window.whiteboardAPI.getAssetThumbnail(thumbAssetId);
+            if (thumbUrl) {
+              contentArea.innerHTML = '';
+              contentArea.style.padding = '0';
+              const img = document.createElement('img');
+              img.style.maxWidth = '100%';
+              img.style.maxHeight = '100%';
+              img.style.objectFit = 'contain';
+              img.src = thumbUrl;
+              contentArea.appendChild(img);
+            }
+          } else {
+            contentArea.innerHTML = item.cardAnnotation || '拖拽文件到此处添加附件';
+            contentArea.style.padding = '12px';
+          }
+        }
+      } else {
+        const imgWrapper = container.querySelector('.img-wrapper, .file-thumb-wrapper');
+        if (imgWrapper) {
+          const thumbAssetId = item.thumbnailAssetId || item.assetId;
+          const thumbUrl = await window.whiteboardAPI.getAssetThumbnail(thumbAssetId);
+          if (thumbUrl) {
+            const existingImg = imgWrapper.querySelector('img');
+            if (existingImg) {
+              existingImg.src = thumbUrl;
+            } else {
+              imgWrapper.innerHTML = '';
+              const img = document.createElement('img');
+              img.style.maxWidth = '100%';
+              img.style.maxHeight = '100%';
+              img.style.objectFit = 'contain';
+              img.src = thumbUrl;
+              imgWrapper.appendChild(img);
+            }
+          }
+        }
+      }
     }
 
     function renderTags(item) {
@@ -1444,7 +2088,9 @@
       const val = input.value.trim();
       if (!val) return;
       if (!item.cardTags) item.cardTags = [];
-      item.cardTags.push(val);
+      if (!item.cardTags.includes(val)) {
+        item.cardTags.push(val);
+      }
       input.value = '';
       scheduleSave();
       renderTags(item);
@@ -1455,6 +2101,10 @@
     }
 
     document.getElementById('todoSearch').addEventListener('input', () => {
+      if (todoPanelOpen) renderTodoList();
+    });
+
+    document.getElementById('todoShowArchived')?.addEventListener('change', () => {
       if (todoPanelOpen) renderTodoList();
     });
 
@@ -1624,6 +2274,7 @@
         alert('请先选中一个卡片');
         return;
       }
+
       const item = items.find(i => i.assetId === selectedItem.dataset.id || i.id === selectedItem.dataset.id);
       if (!item) { alert('找不到卡片数据'); return; }
 
@@ -1708,6 +2359,17 @@
       document.addEventListener('keydown', window._resetViewKeyHandler);
     }
 
+    function setupNewCardKeyBinding() {
+      document.removeEventListener('keydown', window._newCardKeyHandler);
+      window._newCardKeyHandler = (e) => {
+        if (e.ctrlKey && e.key === 'n' && document.activeElement === document.body) {
+          e.preventDefault();
+          createEmptyCard();
+        }
+      };
+      document.addEventListener('keydown', window._newCardKeyHandler);
+    }
+
     function setupSetThumbKeyBinding(key) {
       document.removeEventListener('keydown', window._setThumbKeyHandler);
       if (!key) return;
@@ -1730,11 +2392,12 @@
       if (!key) return;
       const parts = key.split('+').map(p => p.trim());
       window._maximizeKeyHandler = (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
         const wantCtrl = parts.includes('Ctrl');
         const wantShift = parts.includes('Shift');
         const wantAlt = parts.includes('Alt');
         const mainKey = parts.find(p => !['Ctrl', 'Shift', 'Alt', 'Meta'].includes(p));
-        if (e.ctrlKey === wantCtrl && e.shiftKey === wantShift && e.altKey === wantAlt && e.key === mainKey && document.activeElement === document.body) {
+        if (e.ctrlKey === wantCtrl && e.shiftKey === wantShift && e.altKey === wantAlt && e.key.toUpperCase() === mainKey.toUpperCase()) {
           e.preventDefault();
           toggleWindowMaximize();
         }
@@ -1802,13 +2465,20 @@
     }
 
     function updateTimerDisplay(itemId) {
-      const container = whiteboard.querySelector(`[data-id="${itemId}"]`);
+      let container = whiteboard.querySelector(`[data-id="${itemId}"]`);
+      if (!container) {
+        container = whiteboard.querySelector(`[data-asset-id="${itemId}"]`);
+      }
       if (!container) return;
-      const item = items.find(i => i.assetId === itemId || i.id === itemId);
+      const item = items.find(i => (i.assetId && i.assetId === itemId) || i.id === itemId);
       if (!item) return;
       const timerEl = container.querySelector('.timer-display');
       if (timerEl) {
-        timerEl.textContent = getItemTimerDisplay(item);
+        let total = item.timerTotal || 0;
+        if (item.timerRunning && item.timerStartedAt) {
+          total += Date.now() - item.timerStartedAt;
+        }
+        timerEl.textContent = formatTime(total);
         if (item.timerRunning) {
           timerEl.classList.add('running');
         } else {
@@ -1818,10 +2488,10 @@
       const btnEl = container.querySelector('.timer-btn');
       if (btnEl) {
         if (item.timerRunning) {
-          btnEl.textContent = '\u23F8 停止';
+          btnEl.textContent = '\u25CF';
           btnEl.classList.add('running');
         } else {
-          btnEl.textContent = '\u25B6 开始';
+          btnEl.textContent = '\u25B6';
           btnEl.classList.remove('running');
         }
       }
@@ -1831,11 +2501,14 @@
       if (timerInterval) clearInterval(timerInterval);
       timerInterval = setInterval(() => {
         items.forEach(item => {
-          if (item.timerRunning) {
-            updateTimerDisplay(item.assetId);
+          if (item.timerRunning && item.timerStartedAt) {
+            const itemId = item.assetId || item.id;
+            if (itemId) {
+              updateTimerDisplay(itemId);
+            }
           }
         });
-      }, 1000);
+      }, 500);
     }
 
     function stopTimerUpdates() {
@@ -1928,15 +2601,17 @@
       const confirmBtn = document.createElement('button');
       confirmBtn.textContent = '确定';
       confirmBtn.style.cssText = 'padding:8px 16px;background:#4a90d9;border:none;border-radius:4px;color:#fff;cursor:pointer;font-size:14px;';
-      confirmBtn.onclick = () => {
+      confirmBtn.onclick = async () => {
         const hours = parseInt(hourInput.value) || 0;
         const minutes = parseInt(minuteInput.value) || 0;
         const addMs = (hours * 3600 + minutes * 60) * 1000;
 
         if (type === 'add') {
           item.timerTotal = (item.timerTotal || 0) + addMs;
+          await window.whiteboardAPI.addTimer(item.assetId || item.id, hours, minutes);
         } else {
           item.timerTotal = addMs;
+          await window.whiteboardAPI.setTimer(item.assetId || item.id, hours, minutes);
         }
 
         updateTimerDisplay(itemId);
@@ -1959,26 +2634,35 @@
     }
 
     function createTimerBar(item) {
-      const bar = document.createElement('div');
-      bar.className = 'card-timer';
-      bar.addEventListener('mousedown', (e) => e.stopPropagation());
-      bar.addEventListener('click', (e) => e.stopPropagation());
+      return null;
+    }
 
-      const display = document.createElement('span');
-      display.className = 'timer-display';
-      display.textContent = getItemTimerDisplay(item);
+    function createCardControls(item) {
+      return null;
+    }
 
-      const btn = document.createElement('button');
-      btn.className = 'timer-btn' + (item.timerRunning ? ' running' : '');
-      btn.textContent = item.timerRunning ? '\u23F8 停止' : '\u25B6 开始';
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        toggleTimer(item.assetId || item.id);
-      });
-
-      bar.appendChild(display);
-      bar.appendChild(btn);
-      return bar;
+    function toggleArchive(itemId) {
+      const item = items.find(i => i.assetId === itemId || i.id === itemId);
+      if (!item) return;
+      
+      item.archived = !item.archived;
+      
+      const el = whiteboard.querySelector(`[data-id="${itemId}"]`) || whiteboard.querySelector(`[data-asset-id="${itemId}"]`);
+      if (el) {
+        if (item.archived) {
+          el.style.opacity = '0.3';
+          el.style.filter = 'grayscale(100%)';
+        } else {
+          el.style.opacity = '1';
+          el.style.filter = '';
+        }
+        const checkBtn = el.querySelector('.check-btn');
+        if (checkBtn) {
+          checkBtn.textContent = item.archived ? '\u2611' : '\u2610';
+        }
+      }
+      scheduleSave();
+      renderTodoList();
     }
 
     async function init() {
@@ -2006,6 +2690,7 @@
         setupResetViewKeyBinding(settings.localHotkeys?.resetView || '0');
         setupSetThumbKeyBinding(settings.localHotkeys?.setThumb || 'Alt+T');
         setupMaximizeKeyBinding(settings.localHotkeys?.maximize || 'Ctrl+F');
+        setupNewCardKeyBinding();
 
         const state = await window.whiteboardAPI.readState();
 
@@ -2019,13 +2704,48 @@
           if (!item.timerTotal) item.timerTotal = 0;
           if (!item.timerRunning) item.timerRunning = false;
           if (item.timerStartedAt && !item.timerRunning) item.timerStartedAt = null;
+          
+          if (!item.attachments) item.attachments = [];
+          if (!item.thumbnailAssetId) {
+            if (item.assetId) {
+              item.thumbnailAssetId = item.assetId;
+            }
+          }
+          
+          if (item.attachments.length === 0 && item.assetId) {
+            item.attachments = [item.assetId];
+            if (!item.thumbnailAssetId) {
+              item.thumbnailAssetId = item.assetId;
+            }
+          }
+          
+          if (item.type !== 'card' && item.type !== 'image' && item.type !== 'file') {
+            if (item.attachments.length > 0) {
+              const firstAssetId = item.attachments[0];
+              const ext = (item.originalName || '').split('.').pop().toLowerCase();
+              item.type = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'].includes(ext) ? 'image' : 'file';
+            }
+          }
+
+          if (item.groupId && item.groupName) {
+            const existingGroup = groups.find(g => g.id === item.groupId);
+            if (!existingGroup) {
+              groups.push({ id: item.groupId, name: item.groupName, itemIds: [] });
+            }
+            const g = groups.find(g => g.id === item.groupId);
+            if (g && !g.itemIds.includes(item.id) && !g.itemIds.includes(item.assetId)) {
+              g.itemIds.push(item.id || item.assetId);
+            }
+          }
         });
 
         updateTransform();
         updateZoomDisplay();
 
         for (const item of items) {
-          if (item.type === 'image') {
+          if (item.type === 'card') {
+            await createCardElement(item);
+          } else if (item.type === 'image') {
             await createImageElement(item);
           } else {
             await createFileElement(item);
@@ -2079,17 +2799,20 @@
       const action = undoStack.pop();
       if (action.type === 'delete') {
         for (const itemData of action.items) {
-          const container = itemData.type === 'image'
-            ? createImageContainer(itemData.id, itemData.assetId, itemData.originalName)
-            : createFileContainer(itemData.id, itemData.assetId, itemData.originalName);
+          let container;
+          if (itemData.type === 'card') {
+            container = createCardContainer(itemData.id, itemData);
+          } else if (itemData.type === 'image') {
+            container = createImageContainer(itemData.id, itemData);
+          } else {
+            container = createFileContainer(itemData.id, itemData);
+          }
           container.style.left = itemData.x + 'px';
           container.style.top = itemData.y + 'px';
           container.style.width = itemData.width + 'px';
           container.style.height = itemData.height + 'px';
           whiteboard.appendChild(container);
-          const timerBar = createTimerBar(itemData);
-          container.appendChild(timerBar);
-          updateTimerDisplay(itemData.assetId || itemData.id);
+          updateTimerDisplay(itemData.id);
           items.push(itemData);
         }
         updateItemCount();
@@ -2142,19 +2865,58 @@
       input.click();
     }
 
-    async function createItemOnWhiteboard(buffer, filename) {
-      const id = `item_${itemIdCounter++}`;
+    async function createItemOnWhiteboard(buffer, filename, targetCardId = null) {
       const ext = filename.split('.').pop().toLowerCase();
       const isImage = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'].includes(ext);
 
       const assetResult = await window.whiteboardAPI.addAsset(Array.from(buffer), filename);
 
-      const container = isImage
-        ? createImageContainer(id, assetResult.assetId, filename)
-        : createFileContainer(id, assetResult.assetId, filename);
+      let newItem;
+      let container;
+      let centerX, centerY;
 
-      const centerX = (window.innerWidth / 2 - panX) / currentZoom - 100;
-      const centerY = (window.innerHeight / 2 - panY) / currentZoom - 100;
+      if (targetCardId) {
+        const card = items.find(i => i.id === targetCardId || i.assetId === targetCardId);
+        if (card) {
+          await window.whiteboardAPI.attachAssetToCard(targetCardId, assetResult.assetId);
+          card.attachments.push(assetResult.assetId);
+          if (!card.thumbnailAssetId) {
+            card.thumbnailAssetId = assetResult.assetId;
+          }
+          scheduleSave();
+          return;
+        }
+      }
+
+      const id = `item_${itemIdCounter++}`;
+      const itemAssetId = assetResult.assetId;
+      
+      newItem = {
+        id: id,
+        assetId: itemAssetId,
+        originalName: filename,
+        cardName: '',
+        type: isImage ? 'image' : 'file',
+        x: 0,
+        y: 0,
+        width: 0,
+        height: 0,
+        timerTotal: 0,
+        timerRunning: false,
+        timerStartedAt: null,
+        cardTags: [],
+        cardAnnotation: '',
+        cardUrl: '',
+        attachments: [itemAssetId],
+        thumbnailAssetId: itemAssetId
+      };
+
+      container = isImage
+        ? createImageContainer(id, newItem)
+        : createFileContainer(id, newItem);
+
+      centerX = (window.innerWidth / 2 - panX) / currentZoom - 100;
+      centerY = (window.innerHeight / 2 - panY) / currentZoom - 100;
 
       container.style.left = centerX + 'px';
       container.style.top = centerY + 'px';
@@ -2170,28 +2932,9 @@
         });
       }
 
-      const newItem = {
-        id: id,
-        assetId: assetResult.assetId,
-        originalName: filename,
-        cardName: '',
-        type: isImage ? 'image' : 'file',
-        x: centerX,
-        y: centerY,
-        width: 0,
-        height: 0,
-        timerTotal: 0,
-        timerRunning: false,
-        timerStartedAt: null,
-        cardTags: [],
-        cardAnnotation: '',
-        cardUrl: ''
-      };
       items.push(newItem);
 
-      const timerBar = createTimerBar(newItem);
-      container.appendChild(timerBar);
-      updateTimerDisplay(assetResult.assetId);
+      updateTimerDisplay(itemAssetId);
 
       const width = isImage ? Math.min(container.offsetWidth, 400) : 120;
       const height = isImage ? Math.min(container.offsetHeight, 400) : 120;
@@ -2199,6 +2942,46 @@
       container.style.height = height + 'px';
       newItem.width = width;
       newItem.height = height;
+      newItem.x = centerX;
+      newItem.y = centerY;
+
+      selectItem(container);
+      updateItemCount();
+      scheduleSave();
+    }
+
+    async function createEmptyCard() {
+      const result = await window.whiteboardAPI.createEmptyCard({ cardName: '' });
+      if (!result || !result.assetId) {
+        console.error('Failed to create empty card');
+        return;
+      }
+
+      const { assetId, item } = result;
+      const id = `item_${itemIdCounter++}`;
+      
+      const newItem = {
+        ...item,
+        id: id
+      };
+
+      const container = createCardContainer(id, newItem);
+
+      const centerX = (window.innerWidth / 2 - panX) / currentZoom - 100;
+      const centerY = (window.innerHeight / 2 - panY) / currentZoom - 100;
+
+      container.style.left = centerX + 'px';
+      container.style.top = centerY + 'px';
+      container.style.width = '200px';
+      container.style.height = '150px';
+
+      newItem.x = centerX;
+      newItem.y = centerY;
+      newItem.width = 200;
+      newItem.height = 150;
+
+      whiteboard.appendChild(container);
+      items.push(newItem);
 
       selectItem(container);
       updateItemCount();
@@ -2225,13 +3008,36 @@
       }
     }
 
-    function createImageContainer(id, assetId, originalName) {
+    function createImageContainer(id, item) {
       const container = document.createElement('div');
       container.className = 'image-item';
-      container.dataset.id = assetId;
-      container.dataset.assetId = assetId;
-      container.dataset.originalName = originalName || '';
+      container.dataset.id = item.id;
+      container.dataset.assetId = item.assetId || item.id;
+      container.dataset.itemId = item.id;
       container.style.zIndex = zIndex++;
+
+      const topBar = document.createElement('div');
+      topBar.className = 'card-top-bar';
+      topBar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:rgba(0,0,0,0.4);';
+
+      const titleSpan = document.createElement('span');
+      titleSpan.className = 'card-title';
+      titleSpan.textContent = item.cardName || item.originalName || '未命名';
+      titleSpan.style.cssText = 'color:#fff;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100px;';
+
+      const checkBtn = document.createElement('button');
+      checkBtn.className = 'check-btn';
+      checkBtn.textContent = item.archived ? '\u2611' : '\u2610';
+      checkBtn.title = '标记完成';
+      checkBtn.style.cssText = 'width:20px;height:20px;border:none;background:transparent;cursor:pointer;font-size:14px;color:#fff;';
+      checkBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleArchive(item.assetId || item.id);
+      });
+
+      topBar.appendChild(titleSpan);
+      topBar.appendChild(checkBtn);
+      container.appendChild(topBar);
 
       const imgWrapper = document.createElement('div');
       imgWrapper.className = 'img-wrapper';
@@ -2239,16 +3045,42 @@
       imgWrapper.appendChild(img);
       container.appendChild(imgWrapper);
 
+      const thumbAssetId = item.thumbnailAssetId || item.assetId;
       const loadImg = async () => {
-        const thumbUrl = await window.whiteboardAPI.getAssetThumbnail(assetId);
-        if (thumbUrl) {
-          img.src = thumbUrl;
-        } else if (assetId && assetId.startsWith('item_')) {
-          const dataUrl = await window.whiteboardAPI.readFileAsBase64(assetId);
-          if (dataUrl) img.src = dataUrl;
+        if (thumbAssetId) {
+          const thumbUrl = await window.whiteboardAPI.getAssetThumbnail(thumbAssetId);
+          if (thumbUrl) {
+            img.src = thumbUrl;
+          }
         }
       };
       loadImg();
+
+      if (item.archived) {
+        container.style.opacity = '0.3';
+        container.style.filter = 'grayscale(100%)';
+      }
+
+      const bottomBar = document.createElement('div');
+      bottomBar.className = 'card-bottom-bar';
+      bottomBar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:rgba(0,0,0,0.4);';
+
+      const timerDisplay = document.createElement('span');
+      timerDisplay.className = 'timer-display';
+      timerDisplay.textContent = '00:00:00';
+
+      const timerBtn = document.createElement('button');
+      timerBtn.className = 'timer-btn';
+      timerBtn.textContent = '\u25B6';
+      timerBtn.style.cssText = 'width:20px;height:20px;border:none;background:rgba(255,255,255,0.2);border-radius:50%;cursor:pointer;font-size:10px;color:#fff;';
+      timerBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleTimer(item.assetId || item.id);
+      });
+
+      bottomBar.appendChild(timerDisplay);
+      bottomBar.appendChild(timerBtn);
+      container.appendChild(bottomBar);
 
       const handles = ['nw', 'ne', 'sw', 'se'];
       handles.forEach(pos => {
@@ -2264,27 +3096,76 @@
         e.stopPropagation();
         selectItem(container);
         window.whiteboardAPI.showCardContextMenu({
-          id: id,
-          assetId: assetId,
-          originalName: originalName || '',
+          id: item.id,
+          assetId: item.assetId || item.id,
+          originalName: item.originalName || '',
           itemType: 'image'
         });
+      });
+
+      container.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        e.dataTransfer.dropEffect = 'copy';
+      });
+
+      container.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const files = e.dataTransfer.files;
+        if (files && files.length > 0) {
+          for (const file of files) {
+            const arrayBuffer = await file.arrayBuffer();
+            const buffer = new Uint8Array(arrayBuffer);
+            const assetResult = await window.whiteboardAPI.addAsset(Array.from(buffer), file.name);
+            await window.whiteboardAPI.attachAssetToCard(item.id, assetResult.assetId);
+            if (!item.attachments) item.attachments = [];
+            item.attachments.push(assetResult.assetId);
+            if (!item.thumbnailAssetId) {
+              item.thumbnailAssetId = assetResult.assetId;
+            }
+          }
+          scheduleSave();
+          refreshWhiteboardItem(item);
+        }
       });
 
       return container;
     }
 
-    function createFileContainer(id, assetId, originalName) {
+    function createFileContainer(id, item) {
       const container = document.createElement('div');
       container.className = 'file-item';
-      container.dataset.id = assetId;
-      container.dataset.assetId = assetId;
+      container.dataset.id = item.id;
+      container.dataset.assetId = item.assetId || item.id;
+      container.dataset.itemId = item.id;
       container.style.zIndex = zIndex++;
       container.style.display = 'flex';
       container.style.flexDirection = 'column';
       container.style.overflow = 'hidden';
 
-      const ext = originalName ? '.' + originalName.split('.').pop().toLowerCase() : '';
+      const topBar = document.createElement('div');
+      topBar.className = 'card-top-bar';
+      topBar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:rgba(0,0,0,0.4);flex-shrink:0;';
+
+      const titleSpan = document.createElement('span');
+      titleSpan.className = 'card-title';
+      titleSpan.textContent = item.cardName || item.originalName || '未命名';
+      titleSpan.style.cssText = 'color:#fff;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100px;';
+
+      const checkBtn = document.createElement('button');
+      checkBtn.className = 'check-btn';
+      checkBtn.textContent = item.archived ? '\u2611' : '\u2610';
+      checkBtn.title = '标记完成';
+      checkBtn.style.cssText = 'width:20px;height:20px;border:none;background:transparent;cursor:pointer;font-size:14px;color:#fff;';
+      checkBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleArchive(item.assetId || item.id);
+      });
+
+      topBar.appendChild(titleSpan);
+      topBar.appendChild(checkBtn);
+      container.appendChild(topBar);
 
       const thumbWrapper = document.createElement('div');
       thumbWrapper.className = 'file-thumb-wrapper';
@@ -2295,22 +3176,31 @@
       thumbWrapper.style.justifyContent = 'center';
       thumbWrapper.style.overflow = 'hidden';
 
+      const thumbAssetId = item.thumbnailAssetId || item.assetId;
       const loadFileContent = async () => {
-        const thumbUrl = await window.whiteboardAPI.getAssetThumbnail(assetId);
-        if (thumbUrl) {
-          const img = document.createElement('img');
-          img.className = 'file-thumb';
-          img.style.maxWidth = '100%';
-          img.style.maxHeight = '100%';
-          img.style.objectFit = 'contain';
-          img.style.pointerEvents = 'none';
-          thumbWrapper.appendChild(img);
-          img.src = thumbUrl;
+        if (thumbAssetId) {
+          const thumbUrl = await window.whiteboardAPI.getAssetThumbnail(thumbAssetId);
+          if (thumbUrl) {
+            const img = document.createElement('img');
+            img.className = 'file-thumb';
+            img.style.maxWidth = '100%';
+            img.style.maxHeight = '100%';
+            img.style.objectFit = 'contain';
+            img.style.pointerEvents = 'none';
+            thumbWrapper.appendChild(img);
+            img.src = thumbUrl;
+          } else {
+            const iconDiv = document.createElement('div');
+            iconDiv.className = 'icon';
+            iconDiv.style.fontSize = '48px';
+            iconDiv.textContent = getIconForFile(item.originalName);
+            thumbWrapper.appendChild(iconDiv);
+          }
         } else {
           const iconDiv = document.createElement('div');
           iconDiv.className = 'icon';
           iconDiv.style.fontSize = '48px';
-          iconDiv.textContent = getIconForFile(originalName);
+          iconDiv.textContent = getIconForFile(item.originalName);
           thumbWrapper.appendChild(iconDiv);
         }
       };
@@ -2318,11 +3208,31 @@
 
       container.appendChild(thumbWrapper);
 
-      const nameDiv = document.createElement('div');
-      nameDiv.className = 'filename';
-      nameDiv.textContent = originalName;
-      nameDiv.style.flexShrink = '0';
-      container.appendChild(nameDiv);
+      if (item.archived) {
+        container.style.opacity = '0.3';
+        container.style.filter = 'grayscale(100%)';
+      }
+
+      const bottomBar = document.createElement('div');
+      bottomBar.className = 'card-bottom-bar';
+      bottomBar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:rgba(0,0,0,0.4);flex-shrink:0;';
+
+      const timerDisplay = document.createElement('span');
+      timerDisplay.className = 'timer-display';
+      timerDisplay.textContent = '00:00:00';
+
+      const timerBtn = document.createElement('button');
+      timerBtn.className = 'timer-btn';
+      timerBtn.textContent = '\u25B6';
+      timerBtn.style.cssText = 'width:20px;height:20px;border:none;background:rgba(255,255,255,0.2);border-radius:50%;cursor:pointer;font-size:10px;color:#fff;';
+      timerBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleTimer(item.assetId || item.id);
+      });
+
+      bottomBar.appendChild(timerDisplay);
+      bottomBar.appendChild(timerBtn);
+      container.appendChild(bottomBar);
 
       const handles = ['nw', 'ne', 'sw', 'se'];
       handles.forEach(pos => {
@@ -2334,49 +3244,224 @@
 
       container.addEventListener('mousedown', onMouseDown);
       container.addEventListener('dblclick', async () => {
-        await window.whiteboardAPI.openFile(assetId);
+        if (thumbAssetId) {
+          await window.whiteboardAPI.openFile(thumbAssetId);
+        }
       });
       container.addEventListener('contextmenu', (e) => {
         e.preventDefault();
         e.stopPropagation();
         selectItem(container);
         window.whiteboardAPI.showCardContextMenu({
-          id: id,
-          assetId: assetId,
-          originalName: originalName || '',
+          id: item.id,
+          assetId: item.assetId || item.id,
+          originalName: item.originalName || '',
           itemType: 'file'
         });
+      });
+
+      container.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        e.dataTransfer.dropEffect = 'copy';
+      });
+
+      container.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const files = e.dataTransfer.files;
+        if (files && files.length > 0) {
+          for (const file of files) {
+            const arrayBuffer = await file.arrayBuffer();
+            const buffer = new Uint8Array(arrayBuffer);
+            const assetResult = await window.whiteboardAPI.addAsset(Array.from(buffer), file.name);
+            await window.whiteboardAPI.attachAssetToCard(item.id, assetResult.assetId);
+            if (!item.attachments) item.attachments = [];
+            item.attachments.push(assetResult.assetId);
+            if (!item.thumbnailAssetId) {
+              item.thumbnailAssetId = assetResult.assetId;
+            }
+          }
+          scheduleSave();
+          refreshWhiteboardItem(item);
+        }
+      });
+
+      return container;
+    }
+
+    function createCardContainer(id, item) {
+      const container = document.createElement('div');
+      container.className = 'card-item';
+      container.dataset.id = item.id;
+      container.dataset.assetId = item.assetId || item.id;
+      container.dataset.itemId = item.id;
+      container.style.zIndex = zIndex++;
+      container.style.display = 'flex';
+      container.style.flexDirection = 'column';
+      container.style.overflow = 'hidden';
+      container.style.background = '#2d2d2d';
+      container.style.borderRadius = '16px';
+      container.style.boxShadow = '0 2px 8px rgba(0,0,0,0.4)';
+
+      const topBar = document.createElement('div');
+      topBar.className = 'card-top-bar';
+      topBar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(0,0,0,0.3);flex-shrink:0;';
+
+      const titleSpan = document.createElement('span');
+      titleSpan.className = 'card-title';
+      titleSpan.textContent = item.cardName || '新建卡片';
+      titleSpan.style.cssText = 'color:#fff;font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;';
+
+      const checkBtn = document.createElement('button');
+      checkBtn.className = 'check-btn';
+      checkBtn.textContent = item.archived ? '\u2611' : '\u2610';
+      checkBtn.title = '标记完成';
+      checkBtn.style.cssText = 'width:20px;height:20px;border:none;background:transparent;cursor:pointer;font-size:14px;color:#fff;';
+      checkBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleArchive(item.assetId || item.id);
+      });
+
+      topBar.appendChild(titleSpan);
+      topBar.appendChild(checkBtn);
+      container.appendChild(topBar);
+
+      const contentArea = document.createElement('div');
+      contentArea.className = 'card-content-area';
+      contentArea.style.flex = '1';
+      contentArea.style.display = 'flex';
+      contentArea.style.alignItems = 'center';
+      contentArea.style.justifyContent = 'center';
+      contentArea.style.padding = '12px';
+      contentArea.style.color = '#666';
+      contentArea.style.fontSize = '11px';
+      contentArea.style.textAlign = 'center';
+      contentArea.style.minHeight = '60px';
+      contentArea.textContent = item.cardAnnotation || '拖拽文件到此处添加附件';
+      container.appendChild(contentArea);
+
+      if (item.archived) {
+        container.style.opacity = '0.3';
+        container.style.filter = 'grayscale(100%)';
+      }
+
+      const bottomBar = document.createElement('div');
+      bottomBar.className = 'card-bottom-bar';
+      bottomBar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:rgba(0,0,0,0.3);flex-shrink:0;';
+
+      const timerDisplay = document.createElement('span');
+      timerDisplay.className = 'timer-display';
+      timerDisplay.textContent = '00:00:00';
+
+      const timerBtn = document.createElement('button');
+      timerBtn.className = 'timer-btn';
+      timerBtn.textContent = '\u25B6';
+      timerBtn.style.cssText = 'width:20px;height:20px;border:none;background:rgba(255,255,255,0.2);border-radius:50%;cursor:pointer;font-size:10px;color:#fff;';
+      timerBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleTimer(item.assetId || item.id);
+      });
+
+      bottomBar.appendChild(timerDisplay);
+      bottomBar.appendChild(timerBtn);
+      container.appendChild(bottomBar);
+
+      const handles = ['nw', 'ne', 'sw', 'se'];
+      handles.forEach(pos => {
+        const handle = document.createElement('div');
+        handle.className = `resize-handle ${pos}`;
+        handle.dataset.pos = pos;
+        container.appendChild(handle);
+      });
+
+      container.addEventListener('mousedown', onMouseDown);
+      container.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        selectItem(container);
+        window.whiteboardAPI.showCardContextMenu({
+          id: item.id,
+          assetId: item.assetId || item.id,
+          originalName: item.cardName || '',
+          itemType: 'card'
+        });
+      });
+
+      container.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        e.dataTransfer.dropEffect = 'copy';
+      });
+
+      container.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const files = e.dataTransfer.files;
+        if (files && files.length > 0) {
+          for (const file of files) {
+            const arrayBuffer = await file.arrayBuffer();
+            const buffer = new Uint8Array(arrayBuffer);
+            const assetResult = await window.whiteboardAPI.addAsset(Array.from(buffer), file.name);
+            await window.whiteboardAPI.attachAssetToCard(item.id, assetResult.assetId);
+            item.attachments.push(assetResult.assetId);
+            if (!item.thumbnailAssetId) {
+              item.thumbnailAssetId = assetResult.assetId;
+              const img = contentArea.querySelector('img');
+              if (img) {
+                const thumbUrl = await window.whiteboardAPI.getAssetThumbnail(assetResult.assetId);
+                if (thumbUrl) img.src = thumbUrl;
+              } else {
+                contentArea.innerHTML = '';
+                contentArea.style.padding = '0';
+                const img = document.createElement('img');
+                img.style.maxWidth = '100%';
+                img.style.maxHeight = '100%';
+                img.style.objectFit = 'contain';
+                const thumbUrl = await window.whiteboardAPI.getAssetThumbnail(assetResult.assetId);
+                img.src = thumbUrl || '';
+                contentArea.appendChild(img);
+              }
+            }
+          }
+          scheduleSave();
+        }
       });
 
       return container;
     }
 
     async function createImageElement(item) {
-      const assetId = item.assetId || item.file;
-      const container = createImageContainer(item.id, assetId, item.originalName);
+      const container = createImageContainer(item.id, item);
       container.style.width = item.width + 'px';
       container.style.height = item.height + 'px';
       container.style.left = item.x + 'px';
       container.style.top = item.y + 'px';
+      
       whiteboard.appendChild(container);
-
-      const timerBar = createTimerBar(item);
-      container.appendChild(timerBar);
-      updateTimerDisplay(item.assetId || item.id);
+      updateTimerDisplay(item.id);
     }
 
     async function createFileElement(item) {
-      const assetId = item.assetId || item.file;
-      const container = createFileContainer(item.id, assetId, item.originalName);
+      const container = createFileContainer(item.id, item);
       container.style.width = item.width + 'px';
       container.style.height = item.height + 'px';
       container.style.left = item.x + 'px';
       container.style.top = item.y + 'px';
+      
       whiteboard.appendChild(container);
+      updateTimerDisplay(item.id);
+    }
 
-      const timerBar = createTimerBar(item);
-      container.appendChild(timerBar);
-      updateTimerDisplay(item.assetId || item.id);
+    async function createCardElement(item) {
+      const container = createCardContainer(item.id, item);
+      container.style.width = item.width + 'px';
+      container.style.height = item.height + 'px';
+      container.style.left = item.x + 'px';
+      container.style.top = item.y + 'px';
+      
+      whiteboard.appendChild(container);
+      updateTimerDisplay(item.id);
     }
 
     function selectItem(item, addToSelection = false) {
@@ -2429,19 +3514,31 @@
 
       const addToSelection = e.shiftKey;
       if (handle) {
-        if (!selectedItems.has(item)) {
-          selectItem(item);
-        }
         isResizing = true;
-        item.resizeStart = {
-          x: e.clientX,
-          y: e.clientY,
-          width: item.offsetWidth,
-          height: item.offsetHeight,
-          handle: e.target.dataset.pos,
-          left: item.offsetLeft,
-          top: item.offsetTop
-        };
+        
+        if (selectedItems.size > 1) {
+          selectedItems.forEach(el => {
+            el.resizeStart = {
+              x: e.clientX,
+              y: e.clientY,
+              width: el.offsetWidth,
+              height: el.offsetHeight,
+              handle: e.target.dataset.pos,
+              left: el.offsetLeft,
+              top: el.offsetTop
+            };
+          });
+        } else {
+          item.resizeStart = {
+            x: e.clientX,
+            y: e.clientY,
+            width: item.offsetWidth,
+            height: item.offsetHeight,
+            handle: e.target.dataset.pos,
+            left: item.offsetLeft,
+            top: item.offsetTop
+          };
+        }
       } else if (addToSelection) {
         if (selectedItems.has(item)) {
           item.classList.remove('selected');
@@ -2478,8 +3575,11 @@
       scheduleSave();
     }
 
+    let wasDragging = false;
+
     function onMouseMove(e) {
       if (isDragging && dragItem) {
+        wasDragging = true;
         let x = (e.clientX - dragOffset.x - panX) / currentZoom;
         let y = (e.clientY - dragOffset.y - panY) / currentZoom;
         const dx = x - dragItem.offsetLeft;
@@ -2492,27 +3592,62 @@
             el.style.top = (el.offsetTop + dy) + 'px';
           }
         });
+        updateGroupBoxes();
       } else if (isResizing && selectedItem) {
         const start = selectedItem.resizeStart;
-        const dx = (e.clientX - start.x) / currentZoom;
-        const dy = (e.clientY - start.y) / currentZoom;
-        let newWidth = start.width;
-        let newHeight = start.height;
-        let newLeft = start.left;
-        let newTop = start.top;
+        
+        if (selectedItems.size > 1) {
+          const movePixels = (e.clientX - start.x) * 0.3;
+          const scale = Math.max(0.3, Math.min(3, 1 + movePixels / 200));
+          
+          let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+          selectedItems.forEach(el => {
+            minX = Math.min(minX, el.resizeStart.left);
+            minY = Math.min(minY, el.resizeStart.top);
+            maxX = Math.max(maxX, el.resizeStart.left + el.resizeStart.width);
+            maxY = Math.max(maxY, el.resizeStart.top + el.resizeStart.height);
+          });
+          const centerX = (minX + maxX) / 2;
+          const centerY = (minY + maxY) / 2;
+          
+          selectedItems.forEach(el => {
+            const origW = el.resizeStart.width;
+            const origH = el.resizeStart.height;
+            const origCX = el.resizeStart.left + origW / 2;
+            const origCY = el.resizeStart.top + origH / 2;
+            
+            const newW = Math.max(50, origW * scale);
+            const newH = Math.max(50, origH * scale);
+            
+            const newLeft = centerX + (origCX - centerX) * scale - newW / 2;
+            const newTop = centerY + (origCY - centerY) * scale - newH / 2;
+            
+            el.style.width = newW + 'px';
+            el.style.height = newH + 'px';
+            el.style.left = newLeft + 'px';
+            el.style.top = newTop + 'px';
+          });
+        } else {
+          const dx = e.clientX - start.x;
+          const dy = e.clientY - start.y;
+          let newWidth = start.width;
+          let newHeight = start.height;
+          let newLeft = start.left;
+          let newTop = start.top;
 
-        if (start.handle.includes('e')) newWidth += dx;
-        if (start.handle.includes('w')) { newWidth -= dx; newLeft += dx; }
-        if (start.handle.includes('s')) newHeight += dy;
-        if (start.handle.includes('n')) { newHeight -= dy; newTop += dy; }
+          if (start.handle.includes('e')) newWidth += dx;
+          if (start.handle.includes('w')) { newWidth -= dx; newLeft += dx; }
+          if (start.handle.includes('s')) newHeight += dy;
+          if (start.handle.includes('n')) { newHeight -= dy; newTop += dy; }
 
-        if (newWidth > 50) {
-          selectedItem.style.width = newWidth + 'px';
-          selectedItem.style.left = newLeft + 'px';
-        }
-        if (newHeight > 50) {
-          selectedItem.style.height = newHeight + 'px';
-          selectedItem.style.top = newTop + 'px';
+          if (newWidth > 50) {
+            selectedItem.style.width = newWidth + 'px';
+            selectedItem.style.left = newLeft + 'px';
+          }
+          if (newHeight > 50) {
+            selectedItem.style.height = newHeight + 'px';
+            selectedItem.style.top = newTop + 'px';
+          }
         }
       } else if (isBoxSelecting) {
         const container = document.getElementById('canvas-container');
@@ -2541,13 +3676,15 @@
         });
       }
       if (isResizing && selectedItem) {
-        const item = items.find(i => i.assetId === selectedItem.dataset.id || i.id === selectedItem.dataset.id);
-        if (item) {
-          item.width = selectedItem.offsetWidth;
-          item.height = selectedItem.offsetHeight;
-          item.x = selectedItem.offsetLeft;
-          item.y = selectedItem.offsetTop;
-        }
+        selectedItems.forEach(el => {
+          const item = items.find(i => i.assetId === el.dataset.id || i.id === el.dataset.id);
+          if (item) {
+            item.width = el.offsetWidth;
+            item.height = el.offsetHeight;
+            item.x = el.offsetLeft;
+            item.y = el.offsetTop;
+          }
+        });
       }
       if (isBoxSelecting && e) {
         lastBoxSelectEnd = { clientX: e.clientX, clientY: e.clientY };
@@ -2562,22 +3699,31 @@
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('mouseup', onMouseUp);
       scheduleSave();
+      updateGroupBoxes();
     }
 
     function deleteSelected() {
       if (selectedItems.size === 0) return;
-      const idsToDelete = [...selectedItems].map(el => el.dataset.id);
-      const deletedItems = idsToDelete.map(id => {
+      
+      [...selectedItems].forEach(async el => {
+        const id = el.dataset.id;
         const item = items.find(i => i.assetId === id || i.id === id);
-        return { ...item };
+        if (item) {
+          pushUndo({ type: 'delete', items: [{ ...item }] });
+          el.remove();
+          
+          const attachments = item.attachments || [];
+          for (const assetId of attachments) {
+            await window.whiteboardAPI.deleteAsset(assetId);
+          }
+          if (item.assetId && !attachments.includes(item.assetId)) {
+            await window.whiteboardAPI.deleteAsset(item.assetId);
+          }
+          
+          items = items.filter(i => (i.assetId || i.id) !== id);
+        }
       });
-      pushUndo({ type: 'delete', items: deletedItems });
-      idsToDelete.forEach(async id => {
-        const el = whiteboard.querySelector(`[data-id="${id}"]`);
-        if (el) el.remove();
-        await window.whiteboardAPI.deleteItemState(id);
-      });
-      items = items.filter(i => !idsToDelete.includes(i.assetId || i.id));
+      
       clearSelection();
       updateItemCount();
       scheduleSave();
@@ -2644,6 +3790,12 @@
       document.addEventListener('mousemove', onMouseMove);
       document.addEventListener('mouseup', onBoxSelectEnd);
     }
+
+    document.addEventListener('contextmenu', (e) => {
+      if (!e.target.closest('.image-item') && !e.target.closest('.file-item')) {
+        e.preventDefault();
+      }
+    });
 
     document.addEventListener('mousedown', (e) => {
       if (isBoxSelecting) return;
@@ -2729,6 +3881,55 @@
     document.addEventListener('paste', async (e) => {
       e.preventDefault();
 
+      const hasSelection = selectedItem !== null;
+
+      if (hasSelection) {
+        const selectedId = selectedItem.dataset.itemId || selectedItem.dataset.id;
+        const item = items.find(i => i.id === selectedId || i.assetId === selectedId);
+        
+        if (item) {
+          try {
+            const filesData = await window.whiteboardAPI.readClipboardFiles();
+            if (filesData && filesData.length > 0) {
+              for (const fileData of filesData) {
+                const buffer = Uint8Array.from(atob(fileData.buffer), c => c.charCodeAt(0));
+                const assetResult = await window.whiteboardAPI.addAsset(Array.from(buffer), fileData.filename);
+                await window.whiteboardAPI.attachAssetToCard(item.id, assetResult.assetId);
+                if (!item.attachments) item.attachments = [];
+                item.attachments.push(assetResult.assetId);
+                if (!item.thumbnailAssetId) {
+                  item.thumbnailAssetId = assetResult.assetId;
+                }
+              }
+              scheduleSave();
+              refreshWhiteboardItem(item);
+              return;
+            }
+          } catch (err) {
+            console.error('readClipboardFiles error:', err);
+          }
+
+          try {
+            const clipboardData = await window.whiteboardAPI.readClipboardImage();
+            if (clipboardData && clipboardData.buffer) {
+              const buffer = Uint8Array.from(atob(clipboardData.buffer), c => c.charCodeAt(0));
+              const assetResult = await window.whiteboardAPI.addAsset(Array.from(buffer), clipboardData.filename);
+              await window.whiteboardAPI.attachAssetToCard(item.id, assetResult.assetId);
+              if (!item.attachments) item.attachments = [];
+              item.attachments.push(assetResult.assetId);
+              if (!item.thumbnailAssetId) {
+                item.thumbnailAssetId = assetResult.assetId;
+              }
+              scheduleSave();
+              refreshWhiteboardItem(item);
+              return;
+            }
+          } catch (err) {
+            console.error('readClipboardImage error:', err);
+          }
+        }
+      }
+
       try {
         const filesData = await window.whiteboardAPI.readClipboardFiles();
         if (filesData && filesData.length > 0) {
@@ -2755,6 +3956,10 @@
     });
 
     document.addEventListener('click', (e) => {
+      if (wasDragging) {
+        wasDragging = false;
+        return;
+      }
       if (e.target === whiteboard || e.target.id === 'canvas-container' || e.target.id === 'grid-bg') {
         selectItem(null);
       }
@@ -2831,6 +4036,368 @@
         showTimerDialog(data.type, data.itemId);
       }
     });
+
+    window.whiteboardAPI.onCreateGroup((data) => {
+      createGroup(data.itemId);
+    });
+
+    window.whiteboardAPI.onRemoveFromGroup((data) => {
+      removeFromGroup(data.itemId);
+    });
+
+    window.whiteboardAPI.onSelectSameTags((data) => {
+      selectSameTagsItems(data.itemId);
+    });
+
+    let groups = [];
+    let currentGroupId = null;
+
+    function createGroup(itemId) {
+      const item = items.find(i => i.assetId === itemId || i.id === itemId);
+      if (!item) return;
+
+      if (!item.groupId) {
+        const groupId = 'group_' + Date.now();
+        const groupName = '分组' + (groups.length + 1);
+        
+        item.groupId = groupId;
+        item.groupName = groupName;
+        
+        groups.push({ id: groupId, name: groupName, itemIds: [itemId] });
+        
+        if (!item.cardTags) item.cardTags = [];
+        item.cardTags.push(groupName);
+        
+        renderTags(item);
+        scheduleSave();
+        alert('已创建分组: ' + groupName);
+      } else {
+        alert('该卡片已在分组中');
+      }
+    }
+
+    function removeFromGroup(itemId) {
+      const item = items.find(i => i.assetId === itemId || i.id === itemId);
+      if (!item || !item.groupId) return;
+
+      const group = groups.find(g => g.id === item.groupId);
+      if (group) {
+        group.itemIds = group.itemIds.filter(id => id !== itemId);
+        if (group.itemIds.length === 0) {
+          groups = groups.filter(g => g.id !== group.id);
+        }
+      }
+
+      const groupName = item.groupName;
+      item.groupId = null;
+      item.groupName = null;
+
+      if (item.cardTags) {
+        item.cardTags = item.cardTags.filter(t => t !== groupName);
+      }
+
+      renderTags(item);
+      scheduleSave();
+      alert('已从分组移除');
+    }
+
+    function selectSameTagsItems(itemId) {
+      const item = items.find(i => i.assetId === itemId || i.id === itemId);
+      if (!item || !item.cardTags || item.cardTags.length === 0) {
+        alert('该卡片没有标签');
+        return;
+      }
+
+      const tags = item.cardTags;
+      let selectedCount = 0;
+
+      items.forEach(i => {
+        if (i.assetId === itemId || i.id === itemId) return;
+        if (!i.cardTags) return;
+        
+        const hasSameTag = tags.some(tag => i.cardTags.includes(tag));
+        if (hasSameTag) {
+          const el = whiteboard.querySelector(`[data-id="${i.assetId}"]`) || whiteboard.querySelector(`[data-id="${i.id}"]`);
+          if (el && !selectedItems.has(el)) {
+            selectItem(el, true);
+            selectedCount++;
+          }
+        }
+      });
+
+      if (selectedCount === 0) {
+        alert('没有其他相同标签的卡片');
+      }
+    }
+
+    function addSelectedToGroup() {
+      if (selectedItems.size === 0) {
+        alert('请先选择卡片');
+        return;
+      }
+
+      const existingGroup = prompt('请输入分组名称（留空则创建新分组）：');
+      let groupId, groupName;
+
+      if (existingGroup && existingGroup.trim()) {
+        const existing = groups.find(g => g.name === existingGroup.trim());
+        if (existing) {
+          groupId = existing.id;
+          groupName = existing.name;
+        } else {
+          groupId = 'group_' + Date.now();
+          groupName = existingGroup.trim();
+          groups.push({ id: groupId, name: groupName, itemIds: [] });
+        }
+      } else {
+        groupId = 'group_' + Date.now();
+        groupName = '分组' + (groups.length + 1);
+        groups.push({ id: groupId, name: groupName, itemIds: [] });
+      }
+
+      selectedItems.forEach(el => {
+        const itemId = el.dataset.id || el.dataset.assetId;
+        const item = items.find(i => i.assetId === itemId || i.id === itemId);
+        if (item && !item.groupId) {
+          item.groupId = groupId;
+          item.groupName = groupName;
+          groups.find(g => g.id === groupId).itemIds.push(itemId);
+          
+          if (!item.cardTags) item.cardTags = [];
+          if (!item.cardTags.includes(groupName)) {
+            item.cardTags.push(groupName);
+          }
+        }
+      });
+
+      scheduleSave();
+      alert('已添加到分组: ' + groupName);
+      updateGroupBoxes();
+    }
+
+    function getItemTimerDisplay(item) {
+      const total = item.timerTotal || 0;
+      return formatTime(total);
+    }
+
+    let tagMeta = {};
+
+    async function saveTagMeta() {
+      await window.whiteboardAPI.saveTagMeta(tagMeta);
+    }
+
+    async function loadTagMeta() {
+      const loaded = await window.whiteboardAPI.loadTagMeta();
+      if (loaded) {
+        tagMeta = loaded;
+      }
+    }
+
+    function getTagMeta(tag) {
+      if (!tagMeta[tag]) {
+        tagMeta[tag] = { name: tag, targetDate: null, created: Date.now() };
+      }
+      return tagMeta[tag];
+    }
+
+    function setTagMeta(tag, data) {
+      tagMeta[tag] = { ...getTagMeta(tag), ...data };
+    }
+
+    function getTagColor(tag) {
+      if (tag.startsWith('分组')) {
+        const idx = parseInt(tag.replace('分组', '')) || 1;
+        const colors = ['#4a90d9', '#e91e63', '#4caf50', '#ff9800', '#9c27b0'];
+        return colors[(idx - 1) % colors.length];
+      }
+      let hash = 0;
+      for (let i = 0; i < tag.length; i++) {
+        hash = tag.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      return '#4a90d9';
+    }
+
+    function updateGroupBoxes() {
+      document.querySelectorAll('.group-box').forEach(el => el.remove());
+
+      const allTags = new Set();
+      items.forEach(item => {
+        (item.cardTags || []).forEach(tag => allTags.add(tag));
+      });
+
+      allTags.forEach(tag => {
+        const tagItems = items.filter(i => (i.cardTags || []).includes(tag));
+        if (tagItems.length === 0) return;
+
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        let totalTimer = 0;
+
+        tagItems.forEach(item => {
+          if (item.x !== undefined && item.y !== undefined) {
+            minX = Math.min(minX, item.x);
+            minY = Math.min(minY, item.y);
+            maxX = Math.max(maxX, item.x + (item.width || 120));
+            maxY = Math.max(maxY, item.y + (item.height || 120));
+          }
+          if (item.timerTotal) {
+            totalTimer += item.timerTotal;
+          }
+        });
+
+        if (minX === Infinity) return;
+
+        const padding = 30;
+        const box = document.createElement('div');
+        box.className = 'group-box';
+        box.style.left = (minX - padding) + 'px';
+        box.style.top = (minY - padding) + 'px';
+        box.style.width = (maxX - minX + padding * 2) + 'px';
+        box.style.height = (maxY - minY + padding * 2) + 'px';
+        box.style.borderColor = getTagColor(tag);
+        box.style.backgroundColor = getTagColor(tag) + '30';
+
+        const meta = getTagMeta(tag);
+        const displayName = meta.name || tag;
+
+        let subText = `${tagItems.length} 张卡片`;
+        if (totalTimer > 0) {
+          subText += ' · ' + formatTime(totalTimer);
+        }
+        if (meta.targetDate) {
+          const now = new Date();
+          now.setHours(0, 0, 0, 0);
+          const target = new Date(meta.targetDate);
+          target.setHours(0, 0, 0, 0);
+          const diff = Math.ceil((target - now) / (1000 * 60 * 60 * 24));
+          if (diff > 0) subText += ' · 剩余 ' + diff + ' 天';
+          else if (diff < 0) subText += ' · 已过 ' + Math.abs(diff) + ' 天';
+          else subText += ' · 今天到期';
+        }
+
+        const label = document.createElement('div');
+        label.className = 'group-box-label';
+        label.innerHTML = `${displayName}<span class="group-box-sub">${subText}</span>`;
+        label.style.backgroundColor = getTagColor(tag);
+        box.appendChild(label);
+
+        box.addEventListener('click', (e) => {
+          e.stopPropagation();
+          showTagMetaPanel(tag);
+        });
+
+        whiteboard.appendChild(box);
+      });
+    }
+
+    function showTagMetaPanel(tag) {
+      const meta = getTagMeta(tag);
+      const contentEl = document.getElementById('propContent');
+      if (!contentEl) return;
+
+      contentEl.innerHTML = `
+        <div class="prop-section">
+          <div class="prop-section-title">标签/分组</div>
+          <div class="prop-field">
+            <label>标签名称</label>
+            <input type="text" id="propTagName" value="${escapeHtml(meta.name || tag)}">
+          </div>
+          <div class="prop-field">
+            <label>目标日期</label>
+            <input type="date" id="propTagDate" value="${meta.targetDate || ''}">
+          </div>
+          <div class="prop-field">
+            <label>天数计算</label>
+            <div id="propTagDays" style="color:#4a90d9;font-size:14px;padding:4px 0;">-</div>
+          </div>
+          <div class="prop-field">
+            <label>包含卡片</label>
+            <div style="color:#999;font-size:13px;padding:4px 0;">${items.filter(i => (i.cardTags || []).includes(tag)).length} 张</div>
+          </div>
+        </div>
+      `;
+
+      const nameInput = document.getElementById('propTagName');
+      const dateInput = document.getElementById('propTagDate');
+      const daysEl = document.getElementById('propTagDays');
+
+      function updateDays() {
+        if (dateInput.value) {
+          const now = new Date();
+          now.setHours(0, 0, 0, 0);
+          const target = new Date(dateInput.value);
+          target.setHours(0, 0, 0, 0);
+          const diff = Math.ceil((target - now) / (1000 * 60 * 60 * 24));
+          if (diff > 0) daysEl.textContent = '剩余 ' + diff + ' 天';
+          else if (diff < 0) daysEl.textContent = '已过 ' + Math.abs(diff) + ' 天';
+          else daysEl.textContent = '今天到期';
+        } else {
+          daysEl.textContent = '-';
+        }
+      }
+
+      nameInput.addEventListener('change', () => {
+        const oldName = tag;
+        const newName = nameInput.value.trim();
+        if (newName && newName !== oldName) {
+          setTagMeta(oldName, { name: newName });
+          items.forEach(item => {
+            const idx = item.cardTags?.indexOf(oldName);
+            if (idx !== undefined && idx >= 0) {
+              item.cardTags[idx] = newName;
+            }
+          });
+          saveTagMeta();
+          scheduleSave();
+          updateGroupBoxes();
+        }
+      });
+
+      nameInput.addEventListener('blur', () => {
+        const oldName = tag;
+        const newName = nameInput.value.trim();
+        if (newName && newName !== oldName) {
+          setTagMeta(oldName, { name: newName });
+          items.forEach(item => {
+            const idx = item.cardTags?.indexOf(oldName);
+            if (idx !== undefined && idx >= 0) {
+              item.cardTags[idx] = newName;
+            }
+          });
+          saveTagMeta();
+          scheduleSave();
+          updateGroupBoxes();
+        }
+      });
+
+      dateInput.addEventListener('change', () => {
+        setTagMeta(tag, { targetDate: dateInput.value });
+        saveTagMeta();
+        updateDays();
+        updateGroupBoxes();
+      });
+
+      updateDays();
+      if (propPanelOpen) {
+        document.getElementById('propPanel').classList.add('open');
+      }
+    }
+
+    let lastPanX = 0, lastPanY = 0;
+    setInterval(() => {
+      if (panX !== lastPanX || panY !== lastPanY) {
+        lastPanX = panX;
+        lastPanY = panY;
+        updateGroupBoxes();
+      }
+    }, 100);
+
+    const originalUpdateTransform = updateTransform;
+    updateTransform = function() {
+      originalUpdateTransform();
+      updateGroupBoxes();
+    };
+
+    loadTagMeta();
 
     init();
   </script>
