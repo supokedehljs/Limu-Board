@@ -289,7 +289,7 @@ ipcMain.handle('add-asset', async (event, { buffer, filename, cardId }) => {
     
     let assetDir;
     if (cardId) {
-      assetDir = path.join(assetsPath, cardId, 'attachments', assetId);
+      assetDir = path.join(assetsPath, cardId, assetId);
     } else {
       assetDir = path.join(assetsPath, assetId);
     }
@@ -352,7 +352,7 @@ ipcMain.handle('get-asset', async (event, assetId) => {
     } catch {
       const entries = await fs.readdir(assetsPath);
       for (const entry of entries) {
-        const attachmentPath = path.join(assetsPath, entry, 'attachments', assetId);
+        const attachmentPath = path.join(assetsPath, entry, assetId);
         try {
           await fs.access(attachmentPath);
           assetDir = attachmentPath;
@@ -403,7 +403,7 @@ ipcMain.handle('get-asset-thumbnail', async (event, assetId) => {
     } catch {
       const entries = await fs.readdir(assetsPath);
       for (const entry of entries) {
-        const attachmentPath = path.join(assetsPath, entry, 'attachments', assetId);
+        const attachmentPath = path.join(assetsPath, entry, assetId);
         try {
           await fs.access(attachmentPath);
           assetDir = attachmentPath;
@@ -537,7 +537,7 @@ ipcMain.handle('delete-item-state', async (event, assetId) => {
     } catch {
       const entries = await fs.readdir(assetsPath);
       for (const entry of entries) {
-        const attachmentPath = path.join(assetsPath, entry, 'attachments', assetId);
+        const attachmentPath = path.join(assetsPath, entry, assetId);
         try {
           await fs.access(attachmentPath);
           assetDir = attachmentPath;
@@ -567,7 +567,7 @@ ipcMain.handle('open-file', async (event, assetId) => {
       } catch {
         const entries = await fs.readdir(assetsPath);
         for (const entry of entries) {
-          const attachmentPath = path.join(assetsPath, entry, 'attachments', assetId);
+          const attachmentPath = path.join(assetsPath, entry, assetId);
           try {
             await fs.access(attachmentPath);
             assetDir = attachmentPath;
@@ -818,7 +818,7 @@ ipcMain.handle('set-card-thumbnail', async (event, { assetId, buffer }) => {
       } catch {
         const entries = await fs.readdir(assetsPath);
         for (const entry of entries) {
-          const attachmentPath = path.join(assetsPath, entry, 'attachments', assetId);
+          const attachmentPath = path.join(assetsPath, entry, assetId);
           try {
             await fs.access(attachmentPath);
             assetDir = attachmentPath;
