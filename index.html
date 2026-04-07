@@ -1,0 +1,3066 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>白板</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      overflow: hidden;
+      background: #1e1e1e;
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    #titlebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 36px;
+      background: #2d2d2d;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      -webkit-app-region: drag;
+      user-select: none;
+      z-index: 1001;
+    }
+
+    #titlebar-left {
+      display: flex;
+      align-items: center;
+      padding-left: 12px;
+      gap: 8px;
+    }
+
+    #app-icon {
+      width: 18px;
+      height: 18px;
+      background: linear-gradient(135deg, #4a90d9 0%, #357abd 100%);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: white;
+      font-weight: bold;
+    }
+
+    #app-title {
+      color: #999;
+      font-size: 13px;
+    }
+
+    #window-controls {
+      display: flex;
+      -webkit-app-region: no-drag;
+    }
+
+    .window-btn {
+      width: 46px;
+      height: 36px;
+      border: none;
+      background: transparent;
+      color: #999;
+      font-size: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+    }
+
+    .window-btn:hover {
+      background: #404040;
+    }
+
+    .window-btn.close:hover {
+      background: #e81123;
+      color: white;
+    }
+
+    .window-btn svg {
+      width: 10px;
+      height: 10px;
+    }
+
+    #toolbar {
+      display: none;
+    }
+
+    #leftToolbar {
+      position: fixed;
+      top: 36px;
+      bottom: 24px;
+      left: 0;
+      width: 40px;
+      background: #2d2d2d;
+      border-right: 1px solid #404040;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 8px 0;
+      gap: 4px;
+      z-index: 1000;
+      overflow-y: auto;
+    }
+
+    .tool-icon-btn {
+      width: 32px;
+      height: 32px;
+      border: none;
+      background: transparent;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 18px;
+      color: #aaa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+
+    .tool-icon-btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .tool-icon-btn:hover {
+      background: #3a3a3a;
+      color: #fff;
+    }
+
+    .tool-icon-btn:active {
+      background: #4a4a4a;
+    }
+
+    .tool-icon-btn.active {
+      background: #4a90d9;
+      color: #fff;
+    }
+
+    .tool-icon-btn.hidden {
+      display: none;
+    }
+
+    .tool-separator {
+      width: 28px;
+      height: 1px;
+      background: #404040;
+      margin: 4px 0;
+    }
+
+    .tool-btn {
+      padding: 6px 14px;
+      border: 1px solid #555;
+      background: #3a3a3a;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+      color: #ddd;
+      transition: all 0.15s;
+    }
+
+    .tool-btn:hover {
+      background: #4a4a4a;
+      border-color: #666;
+    }
+
+    .tool-btn:active {
+      background: #555;
+    }
+
+    .separator {
+      width: 1px;
+      height: 24px;
+      background: #555;
+      margin: 0 4px;
+    }
+
+    #canvas-container {
+      position: fixed;
+      top: 36px;
+      left: 40px;
+      right: 0;
+      bottom: 0;
+      overflow: hidden;
+      background: #1e1e1e;
+    }
+
+    #grid-bg {
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(circle, #3a3a3a 1px, transparent 1px);
+      background-size: 20px 20px;
+      background-position: 0 0;
+      pointer-events: none;
+    }
+
+    #whiteboard {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      transform-origin: 0 0;
+    }
+
+    .group-box {
+      position: absolute;
+      border: 2px dashed;
+      border-radius: 8px;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0.6;
+    }
+
+    .group-box-label {
+      position: absolute;
+      top: -20px;
+      left: 0;
+      background: inherit;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .image-item {
+      position: absolute;
+      cursor: move;
+      user-select: none;
+      border: 2px solid transparent;
+      background: #2d2d2d;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .image-item:hover {
+      border-color: #4a90d9;
+    }
+
+    .image-item.selected {
+      border-color: #4a90d9;
+    }
+
+    .file-item.selected {
+      border-color: #4a90d9;
+    }
+
+    #selectionBox {
+      position: absolute;
+      border: 1px solid #4a90d9;
+      background: rgba(74, 144, 217, 0.1);
+      pointer-events: none;
+      z-index: 9999;
+      display: none;
+    }
+
+    .image-item .img-wrapper {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 0;
+    }
+
+    .image-item img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      pointer-events: none;
+    }
+
+    .file-item {
+      position: absolute;
+      cursor: move;
+      user-select: none;
+      border: 2px solid transparent;
+      background: #2d2d2d;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+
+    .file-item:hover {
+      border-color: #4a90d9;
+    }
+
+    .file-item.selected {
+      border-color: #4a90d9;
+    }
+
+    .file-item .filename {
+      font-size: 12px;
+      word-break: break-all;
+      text-align: center;
+      max-width: 100px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: #ccc;
+    }
+
+    .file-item .icon {
+      font-size: 48px;
+      margin-bottom: 8px;
+    }
+
+    .card-timer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 8px;
+      background: #252525;
+      border-top: 1px solid #404040;
+      flex-shrink: 0;
+    }
+
+    .timer-display {
+      font-size: 11px;
+      color: #999;
+      font-family: 'Consolas', monospace;
+    }
+
+    .timer-display.running {
+      color: #e53935;
+    }
+
+    .timer-btn {
+      padding: 2px 8px;
+      border: 1px solid #555;
+      background: #3a3a3a;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 11px;
+      color: #ddd;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .timer-btn:hover {
+      background: #4a4a4a;
+    }
+
+    .timer-btn.running {
+      background: #e53935;
+      color: #fff;
+      border-color: #e53935;
+    }
+
+    .timer-btn.running:hover {
+      background: #c62828;
+    }
+
+    .resize-handle {
+      display: none;
+    }
+
+    .resize-handle.se { display: none; }
+    .resize-handle.sw { display: none; }
+    .resize-handle.ne { display: none; }
+    .resize-handle.nw { display: none; }
+
+    #hint {
+      position: fixed;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.8);
+      color: #ccc;
+      padding: 8px 16px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+
+    .save-indicator {
+      position: fixed;
+      top: 84px;
+      right: 16px;
+      background: #4caf50;
+      color: #fff;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .save-indicator.show {
+      opacity: 1;
+    }
+
+    #status-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 24px;
+      background: #2d2d2d;
+      border-top: 1px solid #404040;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      font-size: 11px;
+      color: #999;
+      z-index: 1000;
+    }
+
+    #status-bar span {
+      margin-right: 16px;
+    }
+
+    #todoPanel {
+      position: fixed;
+      top: 36px;
+      left: 40px;
+      width: 280px;
+      bottom: 24px;
+      background: #252525;
+      border-right: 1px solid #404040;
+      z-index: 998;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #todoPanel.open {
+      display: flex;
+    }
+
+    #todoPanel .panel-header {
+      display: flex;
+      align-items: center;
+      padding: 10px 12px;
+      border-bottom: 1px solid #404040;
+      flex-shrink: 0;
+    }
+
+    #todoPanel .panel-header h3 {
+      color: #ddd;
+      font-size: 13px;
+      font-weight: 500;
+      flex: 1;
+    }
+
+    #todoSearch {
+      width: 100%;
+      padding: 6px 10px;
+      background: #2d2d2d;
+      border: 1px solid #404040;
+      border-radius: 4px;
+      color: #ddd;
+      font-size: 12px;
+      outline: none;
+      margin: 8px 12px;
+      width: calc(100% - 24px);
+      box-sizing: border-box;
+    }
+
+    #todoSearch:focus {
+      border-color: #4a90d9;
+    }
+
+    #todoList {
+      flex: 1;
+      overflow-y: auto;
+      padding: 4px 8px;
+    }
+
+    .todo-item {
+      display: flex;
+      align-items: center;
+      padding: 8px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-bottom: 2px;
+      transition: background 0.1s;
+    }
+
+    .todo-item:hover {
+      background: #333;
+    }
+
+    .todo-item.active {
+      background: #2a3a4a;
+    }
+
+    .todo-item-icon {
+      font-size: 16px;
+      margin-right: 8px;
+      flex-shrink: 0;
+    }
+
+    .todo-item-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .todo-item-name {
+      color: #ddd;
+      font-size: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .todo-item-timer {
+      color: #777;
+      font-size: 10px;
+      font-family: 'Consolas', monospace;
+      margin-top: 2px;
+    }
+
+    .todo-item-timer.running {
+      color: #e53935;
+    }
+
+    .todo-item-timer.running::before {
+      content: '';
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      background: #e53935;
+      border-radius: 50%;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+
+    #propPanel {
+      position: fixed;
+      top: 36px;
+      right: 0;
+      width: 300px;
+      bottom: 24px;
+      background: #252525;
+      border-left: 1px solid #404040;
+      z-index: 998;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #propPanel.open {
+      display: flex;
+    }
+
+    #propPanel .panel-header {
+      display: flex;
+      align-items: center;
+      padding: 10px 12px;
+      border-bottom: 1px solid #404040;
+      flex-shrink: 0;
+    }
+
+    #propPanel .panel-header h3 {
+      color: #ddd;
+      font-size: 13px;
+      font-weight: 500;
+      flex: 1;
+    }
+
+    #propContent {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+    }
+
+    .prop-section {
+      margin-bottom: 16px;
+    }
+
+    .prop-section-title {
+      color: #999;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .prop-field {
+      margin-bottom: 10px;
+    }
+
+    .prop-field label {
+      display: block;
+      color: #777;
+      font-size: 11px;
+      margin-bottom: 4px;
+    }
+
+    .prop-field input,
+    .prop-field textarea {
+      width: 100%;
+      padding: 6px 8px;
+      background: #2d2d2d;
+      border: 1px solid #404040;
+      border-radius: 4px;
+      color: #ddd;
+      font-size: 12px;
+      outline: none;
+      box-sizing: border-box;
+      font-family: inherit;
+    }
+
+    .prop-field input:focus,
+    .prop-field textarea:focus {
+      border-color: #4a90d9;
+    }
+
+    .prop-field textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+
+    .prop-thumbnail {
+      text-align: center;
+      margin-bottom: 12px;
+    }
+
+    .prop-thumbnail img {
+      max-width: 100%;
+      max-height: 150px;
+      border-radius: 4px;
+      border: 1px solid #404040;
+    }
+
+    .prop-thumbnail .file-icon {
+      font-size: 64px;
+      text-align: center;
+      padding: 20px 0;
+    }
+
+    .prop-info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
+    .prop-info-item {
+      padding: 6px 8px;
+      background: #2d2d2d;
+      border-radius: 4px;
+    }
+
+    .prop-info-item .label {
+      color: #777;
+      font-size: 10px;
+    }
+
+    .prop-info-item .value {
+      color: #bbb;
+      font-size: 11px;
+      margin-top: 2px;
+    }
+
+    .tags-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-bottom: 6px;
+    }
+
+    .tag-item {
+      display: flex;
+      align-items: center;
+      padding: 2px 8px;
+      background: #2a3a4a;
+      border-radius: 3px;
+      color: #4a90d9;
+      font-size: 11px;
+    }
+
+    .tag-item .tag-remove {
+      margin-left: 4px;
+      cursor: pointer;
+      opacity: 0.6;
+    }
+
+    .tag-item .tag-remove:hover {
+      opacity: 1;
+    }
+
+    .tag-input-row {
+      display: flex;
+      gap: 4px;
+    }
+
+    .tag-input-row input {
+      flex: 1;
+      padding: 4px 8px;
+      background: #2d2d2d;
+      border: 1px solid #404040;
+      border-radius: 4px;
+      color: #ddd;
+      font-size: 11px;
+      outline: none;
+    }
+
+    .tag-input-row input:focus {
+      border-color: #4a90d9;
+    }
+
+    .tag-input-row button {
+      padding: 4px 10px;
+      background: #4a90d9;
+      border: none;
+      border-radius: 4px;
+      color: #fff;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    .prop-no-selection {
+      color: #777;
+      font-size: 12px;
+      text-align: center;
+      padding: 40px 0;
+    }
+
+    #settingsPanel {
+      position: fixed;
+      top: 36px;
+      right: 0;
+      width: 360px;
+      bottom: 24px;
+      background: #252525;
+      border-left: 1px solid #404040;
+      z-index: 999;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #settingsPanel.open {
+      display: flex;
+    }
+
+    .settings-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid #404040;
+      flex-shrink: 0;
+    }
+
+    .settings-header h3 {
+      color: #ddd;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .settings-close {
+      width: 28px;
+      height: 28px;
+      border: none;
+      background: transparent;
+      color: #999;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+
+    .settings-close:hover {
+      background: #404040;
+      color: #ddd;
+    }
+
+    .settings-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+    }
+
+    .settings-section {
+      margin-bottom: 20px;
+    }
+
+    .settings-section h4 {
+      color: #bbb;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+    }
+
+    .lib-item {
+      display: flex;
+      align-items: center;
+      padding: 8px 10px;
+      background: #2d2d2d;
+      border-radius: 4px;
+      margin-bottom: 6px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s;
+    }
+
+    .lib-item:hover {
+      background: #333;
+    }
+
+    .lib-item.active {
+      border-color: #4a90d9;
+      background: #2a3a4a;
+    }
+
+    .lib-item-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .lib-item-name {
+      color: #ddd;
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .lib-item-path {
+      color: #777;
+      font-size: 11px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .lib-item-actions {
+      display: flex;
+      gap: 4px;
+    }
+
+    .lib-item-btn {
+      width: 24px;
+      height: 24px;
+      border: none;
+      background: transparent;
+      color: #777;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 3px;
+      font-size: 12px;
+    }
+
+    .lib-item-btn:hover {
+      background: #404040;
+      color: #ddd;
+    }
+
+    .lib-item-btn.delete:hover {
+      color: #e53935;
+    }
+
+    .add-lib-btn {
+      width: 100%;
+      padding: 8px;
+      border: 1px dashed #555;
+      background: transparent;
+      color: #999;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.15s;
+    }
+
+    .add-lib-btn:hover {
+      border-color: #4a90d9;
+      color: #4a90d9;
+      background: rgba(74, 144, 217, 0.1);
+    }
+
+    .current-lib-label {
+      color: #4a90d9;
+      font-size: 11px;
+      margin-left: 6px;
+    }
+
+    #appSettingsPanel {
+      position: fixed;
+      top: 36px;
+      right: 0;
+      width: 400px;
+      bottom: 24px;
+      background: #252525;
+      border-left: 1px solid #404040;
+      z-index: 999;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #appSettingsPanel.open {
+      display: flex;
+    }
+
+    .settings-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #333;
+    }
+
+    .settings-row:last-child {
+      border-bottom: none;
+    }
+
+    .settings-row-label {
+      color: #bbb;
+      font-size: 13px;
+    }
+
+    .settings-row-desc {
+      color: #777;
+      font-size: 11px;
+      margin-top: 2px;
+    }
+
+    .hotkey-input {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .hotkey-display {
+      padding: 6px 12px;
+      background: #2d2d2d;
+      border: 1px solid #555;
+      border-radius: 4px;
+      color: #ddd;
+      font-size: 12px;
+      font-family: 'Consolas', monospace;
+      min-width: 100px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+
+    .hotkey-display:hover {
+      border-color: #4a90d9;
+    }
+
+    .hotkey-display.recording {
+      border-color: #e53935;
+      background: #3a2020;
+      color: #e53935;
+    }
+
+    .hotkey-reset {
+      padding: 4px 8px;
+      border: 1px solid #555;
+      background: #3a3a3a;
+      color: #999;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 11px;
+    }
+
+    .hotkey-reset:hover {
+      background: #4a4a4a;
+      color: #ddd;
+    }
+
+    .settings-section-divider {
+      margin: 16px 0 8px;
+      border-bottom: 1px solid #404040;
+    }
+
+    .settings-section-title {
+      color: #4a90d9;
+      font-size: 12px;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+
+    #loadingOverlay {
+      position: fixed;
+      inset: 0;
+      background: #1e1e1e;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      transition: opacity 0.3s;
+    }
+
+    #loadingOverlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .tool-btn.hidden {
+      display: none;
+    }
+
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #333;
+      border-top-color: #4a90d9;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      color: #999;
+      font-size: 14px;
+      margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div id="loadingOverlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">加载中...</div>
+  </div>
+
+  <div id="titlebar">
+    <div id="titlebar-left">
+      <div id="app-icon">W</div>
+      <span id="app-title">白板</span>
+    </div>
+    <div id="window-controls">
+      <button class="window-btn minimize" onclick="window.whiteboardAPI.windowMinimize()" title="最小化">
+        <svg viewBox="0 0 10 10"><line x1="0" y1="5" x2="10" y2="5" stroke="currentColor" stroke-width="1"/></svg>
+      </button>
+      <button class="window-btn maximize" onclick="window.whiteboardAPI.windowMaximize()" title="最大化">
+        <svg viewBox="0 0 10 10"><rect x="0.5" y1="0.5" width="9" height="9" fill="none" stroke="currentColor" stroke-width="1"/></svg>
+      </button>
+      <button class="window-btn close" onclick="window.whiteboardAPI.windowHide()" title="隐藏">
+        <svg viewBox="0 0 10 10"><line x1="0" y1="0" x2="10" y2="10" stroke="currentColor" stroke-width="1"/><line x1="10" y1="0" x2="0" y2="10" stroke="currentColor" stroke-width="1"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div id="leftToolbar">
+    <button class="tool-icon-btn" onclick="toggleTodoPanel()" title="待办列表">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+    </button>
+    <button class="tool-icon-btn hidden" onclick="addFile()" title="添加文件">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+    </button>
+    <button class="tool-icon-btn hidden" onclick="testClipboard()" title="粘贴">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
+    </button>
+    <button class="tool-icon-btn hidden" onclick="deleteSelected()" title="删除">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+    </button>
+    <button class="tool-icon-btn hidden" onclick="undoAction()" title="撤销">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13"/></svg>
+    </button>
+    <button class="tool-icon-btn hidden" onclick="clearAll()" title="清空">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+    </button>
+    <div class="tool-separator"></div>
+    <button class="tool-icon-btn" onclick="zoomOut()" title="缩小">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+    </button>
+    <button class="tool-icon-btn" onclick="zoomIn()" title="放大">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+    </button>
+    <button class="tool-icon-btn" onclick="resetView()" title="重置视图">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+    </button>
+    <div class="tool-separator"></div>
+    <button class="tool-icon-btn" onclick="togglePropPanel()" title="属性">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+    </button>
+    <button class="tool-icon-btn" onclick="toggleSettings()" title="素材库">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+    </button>
+    <button class="tool-icon-btn" onclick="toggleAppSettings()" title="设置">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+    </button>
+  </div>
+
+  <div id="canvas-container">
+    <div id="grid-bg"></div>
+    <div id="whiteboard"></div>
+    <div id="selectionBox"></div>
+  </div>
+
+  <div id="todoPanel">
+    <div class="panel-header">
+      <h3>待办列表</h3>
+    </div>
+    <input type="text" id="todoSearch" placeholder="搜索...">
+    <div id="todoList"></div>
+  </div>
+
+  <div id="propPanel">
+    <div class="panel-header">
+      <h3>属性</h3>
+    </div>
+    <div id="propContent">
+      <div class="prop-no-selection">选择卡片查看属性</div>
+    </div>
+  </div>
+
+  <div class="save-indicator" id="saveIndicator">已保存</div>
+  <div id="hint">添加文件或 Ctrl+V 粘贴 | 滚轮缩放 | 中键平移 | Delete删除</div>
+
+  <div id="status-bar">
+    <span id="itemCount">项目: 0</span>
+    <span id="zoomLevel">100%</span>
+    <span id="zoomStatus">缩放: 100%</span>
+    <span id="libraryStatus" style="margin-left:auto;">库: 默认</span>
+  </div>
+
+  <div id="settingsPanel">
+    <div class="settings-header">
+      <h3>素材库管理</h3>
+      <button class="settings-close" onclick="toggleSettings()">✕</button>
+    </div>
+    <div class="settings-body">
+      <div class="settings-section">
+        <h4>已添加的库</h4>
+        <div id="libraryList"></div>
+        <button class="add-lib-btn" onclick="addLibrary()">+ 添加素材库</button>
+        <button class="add-lib-btn" onclick="createLibrary()" style="margin-top:6px;">+ 新建素材库</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="appSettingsPanel">
+    <div class="settings-header">
+      <h3>设置</h3>
+      <button class="settings-close" onclick="toggleAppSettings()">✕</button>
+    </div>
+    <div class="settings-body">
+      <div class="settings-section-title">全局快捷键</div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-row-label">显示/隐藏窗口</div>
+          <div class="settings-row-desc">在任何地方按下快捷键可切换窗口显示</div>
+        </div>
+        <div class="hotkey-input">
+          <div class="hotkey-display" id="globalHotkeyDisplay" tabindex="0" title="点击后按下快捷键">Alt+W</div>
+          <button class="hotkey-reset" onclick="resetGlobalHotkey()">重置</button>
+        </div>
+      </div>
+
+      <div class="settings-section-divider"></div>
+      <div class="settings-section-title">局内快捷键</div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-row-label">删除选中</div>
+          <div class="settings-row-desc">删除当前选中的卡片</div>
+        </div>
+        <div class="hotkey-input">
+          <div class="hotkey-display" id="deleteHotkeyDisplay" tabindex="0">Delete</div>
+          <button class="hotkey-reset" onclick="resetDeleteHotkey()">重置</button>
+        </div>
+      </div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-row-label">缩放重置</div>
+          <div class="settings-row-desc">重置视图到默认缩放</div>
+        </div>
+        <div class="hotkey-input">
+          <div class="hotkey-display" id="resetViewHotkeyDisplay" tabindex="0">0</div>
+          <button class="hotkey-reset" onclick="resetResetViewHotkey()">重置</button>
+        </div>
+      </div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-row-label">设置缩略图</div>
+          <div class="settings-row-desc">将剪贴板图片设为选中卡片缩略图</div>
+        </div>
+        <div class="hotkey-input">
+          <div class="hotkey-display" id="setThumbHotkeyDisplay" tabindex="0">Alt+T</div>
+          <button class="hotkey-reset" onclick="resetSetThumbHotkey()">重置</button>
+        </div>
+      </div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-row-label">最大化/还原</div>
+          <div class="settings-row-desc">切换窗口最大化状态</div>
+        </div>
+        <div class="hotkey-input">
+          <div class="hotkey-display" id="maximizeHotkeyDisplay" tabindex="0">Ctrl+F</div>
+          <button class="hotkey-reset" onclick="resetMaximizeHotkey()">重置</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const whiteboard = document.getElementById('whiteboard');
+    const gridBg = document.getElementById('grid-bg');
+    const saveIndicator = document.getElementById('saveIndicator');
+    const zoomLevelEl = document.getElementById('zoomLevel');
+    const zoomStatusEl = document.getElementById('zoomStatus');
+    const itemCountEl = document.getElementById('itemCount');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+
+    let selectedItem = null;
+    let selectedItems = new Set();
+    let dragItem = null;
+    let isDragging = false;
+    let isPanning = false;
+    let isResizing = false;
+    let dragOffset = { x: 0, y: 0 };
+    let panStart = { x: 0, y: 0 };
+    let currentZoom = 1;
+    let panX = 0;
+    let panY = 0;
+    let zIndex = 1;
+    let items = [];
+    let saveTimeout = null;
+    let itemIdCounter = 0;
+    let timerInterval = null;
+    let settingsOpen = false;
+    let todoPanelOpen = false;
+    let propPanelOpen = false;
+    let isBoxSelecting = false;
+    let boxSelectStart = { x: 0, y: 0 };
+    let boxSelectRect = null;
+    let undoStack = [];
+    let lastBoxSelectEnd = null;
+
+    const ICON_MAP = {
+      '.png': '\uD83D\uDDBC', '.jpg': '\uD83D\uDDBC', '.jpeg': '\uD83D\uDDBC',
+      '.gif': '\uD83D\uDDBC', '.bmp': '\uD83D\uDDBC', '.webp': '\uD83D\uDDBC',
+      '.pdf': '\uD83D\uDCC4',
+      '.doc': '\uD83D\uDCDD', '.docx': '\uD83D\uDCDD',
+      '.xls': '\uD83D\uDCCA', '.xlsx': '\uD83D\uDCCA',
+      '.ppt': '\uD83D\uDCFA', '.pptx': '\uD83D\uDCFA',
+      '.txt': '\uD83D\uDCD3',
+      '.zip': '\uD83D\uDCE6', '.rar': '\uD83D\uDCE6', '.7z': '\uD83D\uDCE6',
+      '.mp3': '\uD83C\uDFB5', '.wav': '\uD83C\uDFB5', '.flac': '\uD83C\uDFB5',
+      '.mp4': '\uD83C\uDFAC', '.avi': '\uD83C\uDFAC', '.mkv': '\uD83C\uDFAC',
+      '.obj': '\uD83C\uDFB2', '.fbx': '\uD83C\uDFB2', '.stl': '\uD83C\uDFB2'
+    };
+
+    function getIconForFile(filename) {
+      if (!filename) return '\uD83D\uDCC1';
+      const ext = '.' + filename.split('.').pop().toLowerCase();
+      return ICON_MAP[ext] || '\uD83D\uDCC1';
+    }
+
+    function getIconType(filename) {
+      if (!filename) return 'file';
+      const ext = '.' + filename.split('.').pop().toLowerCase();
+      const typeMap = {
+        '.pdf': 'pdf', '.doc': 'word', '.docx': 'word',
+        '.xls': 'excel', '.xlsx': 'excel',
+        '.ppt': 'ppt', '.pptx': 'ppt',
+        '.txt': 'text',
+        '.zip': 'archive', '.rar': 'archive', '.7z': 'archive',
+        '.mp3': 'audio', '.wav': 'audio', '.flac': 'audio',
+        '.mp4': 'video', '.avi': 'video', '.mkv': 'video',
+        '.obj': '3d', '.fbx': '3d', '.stl': '3d',
+        '.png': 'image', '.jpg': 'image', '.jpeg': 'image',
+        '.gif': 'image', '.bmp': 'image', '.webp': 'image'
+      };
+      return typeMap[ext] || 'file';
+    }
+
+    async function toggleTodoPanel() {
+      todoPanelOpen = !todoPanelOpen;
+      document.getElementById('todoPanel').classList.toggle('open', todoPanelOpen);
+      if (todoPanelOpen) {
+        renderTodoList();
+      }
+    }
+
+    async function togglePropPanel() {
+      propPanelOpen = !propPanelOpen;
+      document.getElementById('propPanel').classList.toggle('open', propPanelOpen);
+      if (propPanelOpen && selectedItem) {
+        renderPropPanel(selectedItem.dataset.id);
+      }
+    }
+
+    function renderTodoList() {
+      const listEl = document.getElementById('todoList');
+      const searchVal = (document.getElementById('todoSearch').value || '').toLowerCase();
+      const filtered = items.filter(item => {
+        const name = item.cardName || item.originalName || '';
+        return name.toLowerCase().includes(searchVal);
+      });
+      if (filtered.length === 0) {
+        listEl.innerHTML = '<div style="color:#777;font-size:12px;padding:12px 0;text-align:center;">暂无待办</div>';
+        return;
+      }
+      listEl.innerHTML = '';
+      for (const item of filtered) {
+        const el = document.createElement('div');
+        el.className = 'todo-item' + (selectedItem && selectedItem.dataset.id === item.id ? ' active' : '');
+        const icon = item.type === 'image' ? '\uD83D\uDDBC' : getIconForFile(item.originalName);
+        const timerText = getItemTimerDisplay(item);
+        const isRunning = item.timerRunning;
+        el.innerHTML = `
+          <span class="todo-item-icon">${icon}</span>
+          <div class="todo-item-info">
+            <div class="todo-item-name">${escapeHtml(item.cardName || item.originalName || '未命名')}</div>
+            <div class="todo-item-timer${isRunning ? ' running' : ''}">${timerText}</div>
+          </div>
+        `;
+        el.addEventListener('click', () => {
+          const container = whiteboard.querySelector(`[data-id="${item.id}"]`);
+          if (container) {
+            selectItem(container);
+            panX = window.innerWidth / 2 - item.x * currentZoom - item.width * currentZoom / 2;
+            panY = window.innerHeight / 2 - item.y * currentZoom - item.height * currentZoom / 2;
+            updateTransform();
+            scheduleSave();
+          }
+        });
+        el.addEventListener('dblclick', () => {
+          window.whiteboardAPI.openFile(item.assetId);
+        });
+        listEl.appendChild(el);
+      }
+    }
+
+    function renderPropPanel(itemId) {
+      const item = items.find(i => i.assetId === itemId || i.id === itemId);
+      const contentEl = document.getElementById('propContent');
+      if (!item) {
+        contentEl.innerHTML = '<div class="prop-no-selection">选择卡片查看属性</div>';
+        return;
+      }
+
+      const thumbnailHtml = item.type === 'image'
+        ? `<div class="prop-thumbnail"><img id="propThumbImg" src="" alt=""></div>`
+        : `<div class="prop-thumbnail"><div class="file-icon">${getIconForFile(item.originalName)}</div></div>`;
+
+      contentEl.innerHTML = `
+        ${thumbnailHtml}
+        <div class="prop-section">
+          <div class="prop-field">
+            <label>卡片名称</label>
+            <input type="text" id="propCardName" value="${escapeHtml(item.cardName || item.originalName || '')}">
+          </div>
+          <div class="prop-field">
+            <label>注释</label>
+            <textarea id="propAnnotation">${escapeHtml(item.cardAnnotation || '')}</textarea>
+          </div>
+          <div class="prop-field">
+            <label>链接</label>
+            <input type="text" id="propUrl" value="${escapeHtml(item.cardUrl || '')}" placeholder="https://...">
+          </div>
+        </div>
+        <div class="prop-section">
+          <div class="prop-section-title">标签</div>
+          <div class="tags-container" id="propTags"></div>
+          <div class="tag-input-row">
+            <input type="text" id="propTagInput" placeholder="输入标签...">
+            <button onclick="addTag()">添加</button>
+          </div>
+        </div>
+        <div class="prop-section">
+          <div class="prop-section-title">基本信息</div>
+          <div class="prop-info-grid">
+            <div class="prop-info-item">
+              <div class="label">类型</div>
+              <div class="value">${item.type === 'image' ? '图片' : '文件'}</div>
+            </div>
+            <div class="prop-info-item">
+              <div class="label">原始名称</div>
+              <div class="value">${escapeHtml(item.originalName || '-')}</div>
+            </div>
+            <div class="prop-info-item">
+              <div class="label">尺寸</div>
+              <div class="value">${Math.round(item.width)} × ${Math.round(item.height)}</div>
+            </div>
+            <div class="prop-info-item">
+              <div class="label">计时</div>
+              <div class="value">${getItemTimerDisplay(item)}</div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      if (item.type === 'image') {
+        const thumbImg = document.getElementById('propThumbImg');
+        window.whiteboardAPI.getAssetThumbnail(item.assetId).then(url => {
+          if (url) {
+            thumbImg.src = url;
+          }
+        });
+      }
+
+      renderTags(item);
+
+      const nameInput = document.getElementById('propCardName');
+      nameInput.addEventListener('input', () => {
+        item.cardName = nameInput.value;
+        scheduleSave();
+        renderTodoList();
+      });
+
+      const annInput = document.getElementById('propAnnotation');
+      annInput.addEventListener('input', () => {
+        item.cardAnnotation = annInput.value;
+        scheduleSave();
+      });
+
+      const urlInput = document.getElementById('propUrl');
+      urlInput.addEventListener('input', () => {
+        item.cardUrl = urlInput.value;
+        scheduleSave();
+      });
+
+      const tagInput = document.getElementById('propTagInput');
+      tagInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          addTag();
+        }
+      });
+    }
+
+    function renderTags(item) {
+      const container = document.getElementById('propTags');
+      if (!container) return;
+      container.innerHTML = '';
+      const tags = item.cardTags || [];
+      tags.forEach((tag, idx) => {
+        const el = document.createElement('span');
+        el.className = 'tag-item';
+        el.innerHTML = `${escapeHtml(tag)}<span class="tag-remove" data-idx="${idx}">✕</span>`;
+        container.appendChild(el);
+      });
+      container.querySelectorAll('.tag-remove').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = parseInt(btn.dataset.idx);
+          item.cardTags.splice(idx, 1);
+          scheduleSave();
+          renderTags(item);
+        });
+      });
+    }
+
+    function addTag() {
+      if (!selectedItem) return;
+      const item = items.find(i => i.assetId === selectedItem.dataset.id || i.id === selectedItem.dataset.id);
+      if (!item) return;
+      const input = document.getElementById('propTagInput');
+      const val = input.value.trim();
+      if (!val) return;
+      if (!item.cardTags) item.cardTags = [];
+      if (!item.cardTags.includes(val)) {
+        item.cardTags.push(val);
+      }
+      input.value = '';
+      scheduleSave();
+      renderTags(item);
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    document.getElementById('todoSearch').addEventListener('input', () => {
+      if (todoPanelOpen) renderTodoList();
+    });
+
+    async function toggleSettings() {
+      settingsOpen = !settingsOpen;
+      document.getElementById('settingsPanel').classList.toggle('open', settingsOpen);
+      if (settingsOpen) {
+        await loadLibraryList();
+      }
+    }
+
+    async function loadLibraryList() {
+      const data = await window.whiteboardAPI.getLibraries();
+      const listEl = document.getElementById('libraryList');
+      if (!data.libraries || data.libraries.length === 0) {
+        listEl.innerHTML = '<div style="color:#777;font-size:12px;padding:8px 0;">暂无素材库</div>';
+        document.getElementById('libraryStatus').textContent = '库: 默认';
+        return;
+      }
+      listEl.innerHTML = '';
+      for (const lib of data.libraries) {
+        const item = document.createElement('div');
+        item.className = 'lib-item' + (lib.id === data.activeId ? ' active' : '');
+        item.innerHTML = `
+          <div class="lib-item-info">
+            <div class="lib-item-name">${lib.name}${lib.id === data.activeId ? '<span class="current-lib-label">当前</span>' : ''}</div>
+            <div class="lib-item-path">${lib.path}</div>
+          </div>
+          <div class="lib-item-actions">
+            ${lib.id !== data.activeId ? `<button class="lib-item-btn" title="切换" onclick="event.stopPropagation();switchLibrary('${lib.id}')">✓</button>` : ''}
+            ${lib.id !== data.activeId ? `<button class="lib-item-btn delete" title="删除" onclick="event.stopPropagation();removeLibrary('${lib.id}')">✕</button>` : ''}
+          </div>
+        `;
+        if (lib.id !== data.activeId) {
+          item.addEventListener('click', () => switchLibrary(lib.id));
+        }
+        listEl.appendChild(item);
+      }
+      const activeLib = data.libraries.find(l => l.id === data.activeId);
+      document.getElementById('libraryStatus').textContent = '库: ' + (activeLib ? activeLib.name : '默认');
+    }
+
+    async function addLibrary() {
+      const folderPath = await window.whiteboardAPI.selectLibraryFolder();
+      if (!folderPath) return;
+      try {
+        await window.whiteboardAPI.addLibrary(folderPath);
+        await loadLibraryList();
+      } catch (err) {
+        alert('添加失败: ' + err.message);
+      }
+    }
+
+    async function createLibrary() {
+      const libPath = await window.whiteboardAPI.createLibrary();
+      if (!libPath) return;
+      try {
+        await window.whiteboardAPI.addLibrary(libPath);
+        await loadLibraryList();
+      } catch (err) {
+        alert('创建失败: ' + err.message);
+      }
+    }
+
+    async function switchLibrary(libId) {
+      await window.whiteboardAPI.setActiveLibrary(libId);
+      await loadLibraryList();
+    }
+
+    async function removeLibrary(libId) {
+      if (!confirm('确定要移除此素材库吗？（不会删除文件）')) return;
+      await window.whiteboardAPI.removeLibrary(libId);
+      await loadLibraryList();
+    }
+
+    let appSettingsOpen = false;
+    let recordingHotkey = null;
+
+    async function toggleAppSettings() {
+      appSettingsOpen = !appSettingsOpen;
+      document.getElementById('appSettingsPanel').classList.toggle('open', appSettingsOpen);
+      if (appSettingsOpen) {
+        await loadSettings();
+      }
+    }
+
+    async function loadSettings() {
+      const settings = await window.whiteboardAPI.getSettings();
+      const globalHotkeyEl = document.getElementById('globalHotkeyDisplay');
+      const deleteHotkeyEl = document.getElementById('deleteHotkeyDisplay');
+      const resetViewHotkeyEl = document.getElementById('resetViewHotkeyDisplay');
+      const setThumbHotkeyEl = document.getElementById('setThumbHotkeyDisplay');
+      const maximizeHotkeyEl = document.getElementById('maximizeHotkeyDisplay');
+      if (globalHotkeyEl) globalHotkeyEl.textContent = settings.globalHotkey || '未设置';
+      if (deleteHotkeyEl) deleteHotkeyEl.textContent = settings.localHotkeys?.delete || 'Delete';
+      if (resetViewHotkeyEl) resetViewHotkeyEl.textContent = settings.localHotkeys?.resetView || '0';
+      if (setThumbHotkeyEl) setThumbHotkeyEl.textContent = settings.localHotkeys?.setThumb || 'Ctrl+Shift+T';
+      if (maximizeHotkeyEl) maximizeHotkeyEl.textContent = settings.localHotkeys?.maximize || 'Ctrl+F';
+    }
+
+    function setupHotkeyInput(elementId, settingKey, callback) {
+      const el = document.getElementById(elementId);
+      if (!el) return;
+      el.addEventListener('keydown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (recordingHotkey === elementId) {
+          const keys = [];
+          if (e.ctrlKey) keys.push('Ctrl');
+          if (e.altKey) keys.push('Alt');
+          if (e.shiftKey) keys.push('Shift');
+          if (!['Control', 'Alt', 'Shift', 'Meta'].includes(e.key)) {
+            keys.push(e.key.length === 1 ? e.key.toUpperCase() : e.key);
+          }
+          if (keys.length > 0) {
+            el.textContent = keys.join('+');
+            el.classList.remove('recording');
+            recordingHotkey = null;
+            callback(keys.join('+'));
+          }
+        } else {
+          recordingHotkey = elementId;
+          el.classList.add('recording');
+          el.textContent = '按下快捷键...';
+        }
+      });
+      el.addEventListener('blur', () => {
+        if (recordingHotkey === elementId) {
+          el.classList.remove('recording');
+          recordingHotkey = null;
+        }
+      });
+    }
+
+    async function saveHotkeySetting(settingKey, value) {
+      const settings = await window.whiteboardAPI.getSettings();
+      if (settingKey === 'globalHotkey') {
+        settings.globalHotkey = value;
+      } else {
+        if (!settings.localHotkeys) settings.localHotkeys = {};
+        settings.localHotkeys[settingKey] = value;
+      }
+      await window.whiteboardAPI.saveSettings(settings);
+      await loadSettings();
+    }
+
+    function resetGlobalHotkey() {
+      saveHotkeySetting('globalHotkey', 'Alt+W');
+    }
+
+    function resetDeleteHotkey() {
+      saveHotkeySetting('delete', 'Delete');
+      setupDeleteKeyBinding('Delete');
+    }
+
+    function resetResetViewHotkey() {
+      saveHotkeySetting('resetView', '0');
+      setupResetViewKeyBinding('0');
+    }
+
+    function resetSetThumbHotkey() {
+      saveHotkeySetting('setThumb', 'Alt+T');
+    }
+
+    async function setCardThumbnailFromClipboard() {
+      if (!selectedItem) {
+        alert('请先选中一个卡片');
+        return;
+      }
+
+      const item = items.find(i => i.assetId === selectedItem.dataset.id || i.id === selectedItem.dataset.id);
+      if (!item) { alert('找不到卡片数据'); return; }
+
+      const clipboardData = await window.whiteboardAPI.readClipboardImage();
+      if (!clipboardData || !clipboardData.buffer) {
+        alert('剪贴板没有图片');
+        return;
+      }
+
+      const buffer = Uint8Array.from(atob(clipboardData.buffer), c => c.charCodeAt(0));
+      const success = await window.whiteboardAPI.setCardThumbnail(item.assetId, Array.from(buffer));
+
+      if (!success) {
+        alert('保存缩略图失败');
+        return;
+      }
+
+      await new Promise(r => setTimeout(r, 100));
+
+      const thumbUrl = await window.whiteboardAPI.getAssetThumbnail(item.assetId);
+      if (!thumbUrl) {
+        alert('获取缩略图失败');
+        return;
+      }
+
+      if (item.type === 'image') {
+        const imgWrapper = selectedItem.querySelector('.img-wrapper');
+        if (imgWrapper) {
+          const oldImg = imgWrapper.querySelector('img');
+          if (oldImg) oldImg.remove();
+          const newImg = document.createElement('img');
+          newImg.src = thumbUrl;
+          imgWrapper.appendChild(newImg);
+        }
+      } else {
+        const oldIcon = selectedItem.querySelector('.icon');
+        if (oldIcon) oldIcon.remove();
+        const oldThumb = selectedItem.querySelector('.file-thumb');
+        if (oldThumb) oldThumb.remove();
+        const img = document.createElement('img');
+        img.className = 'file-thumb';
+        img.src = thumbUrl;
+        img.style.maxWidth = '100%';
+        img.style.maxHeight = '80px';
+        img.style.objectFit = 'contain';
+        img.style.marginBottom = '8px';
+        img.style.borderRadius = '4px';
+        const nameEl = selectedItem.querySelector('.filename');
+        if (nameEl) {
+          selectedItem.insertBefore(img, nameEl);
+        } else {
+          selectedItem.appendChild(img);
+        }
+      }
+
+      if (propPanelOpen) {
+        renderPropPanel(item.id);
+      }
+    }
+
+    function setupDeleteKeyBinding(key) {
+      document.removeEventListener('keydown', window._deleteKeyHandler);
+      if (!key) return;
+      window._deleteKeyHandler = (e) => {
+        if (e.key === key && selectedItem && document.activeElement === document.body) {
+          e.preventDefault();
+          deleteSelected();
+        }
+      };
+      document.addEventListener('keydown', window._deleteKeyHandler);
+    }
+
+    function setupResetViewKeyBinding(key) {
+      document.removeEventListener('keydown', window._resetViewKeyHandler);
+      if (!key) return;
+      window._resetViewKeyHandler = (e) => {
+        if (e.key === key && document.activeElement === document.body) {
+          e.preventDefault();
+          resetView();
+        }
+      };
+      document.addEventListener('keydown', window._resetViewKeyHandler);
+    }
+
+    function setupSetThumbKeyBinding(key) {
+      document.removeEventListener('keydown', window._setThumbKeyHandler);
+      if (!key) return;
+      const parts = key.split('+').map(p => p.trim());
+      window._setThumbKeyHandler = (e) => {
+        const wantCtrl = parts.includes('Ctrl');
+        const wantShift = parts.includes('Shift');
+        const wantAlt = parts.includes('Alt');
+        const mainKey = parts.find(p => !['Ctrl', 'Shift', 'Alt', 'Meta'].includes(p));
+        if (e.ctrlKey === wantCtrl && e.shiftKey === wantShift && e.altKey === wantAlt && e.key === mainKey && document.activeElement === document.body) {
+          e.preventDefault();
+          setCardThumbnailFromClipboard();
+        }
+      };
+      document.addEventListener('keydown', window._setThumbKeyHandler);
+    }
+
+    function setupMaximizeKeyBinding(key) {
+      document.removeEventListener('keydown', window._maximizeKeyHandler);
+      if (!key) return;
+      const parts = key.split('+').map(p => p.trim());
+      window._maximizeKeyHandler = (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+        const wantCtrl = parts.includes('Ctrl');
+        const wantShift = parts.includes('Shift');
+        const wantAlt = parts.includes('Alt');
+        const mainKey = parts.find(p => !['Ctrl', 'Shift', 'Alt', 'Meta'].includes(p));
+        if (e.ctrlKey === wantCtrl && e.shiftKey === wantShift && e.altKey === wantAlt && e.key.toUpperCase() === mainKey.toUpperCase()) {
+          e.preventDefault();
+          toggleWindowMaximize();
+        }
+      };
+      document.addEventListener('keydown', window._maximizeKeyHandler);
+    }
+
+    async function toggleWindowMaximize() {
+      const isMax = await window.whiteboardAPI.windowIsMaximized();
+      if (isMax) {
+        await window.whiteboardAPI.windowUnmaximize();
+      } else {
+        await window.whiteboardAPI.windowMaximize();
+      }
+    }
+
+    setupHotkeyInput('globalHotkeyDisplay', 'globalHotkey', (value) => {
+      saveHotkeySetting('globalHotkey', value);
+    });
+
+    setupHotkeyInput('deleteHotkeyDisplay', 'delete', (value) => {
+      saveHotkeySetting('delete', value);
+      setupDeleteKeyBinding(value);
+    });
+
+    setupHotkeyInput('resetViewHotkeyDisplay', 'resetView', (value) => {
+      saveHotkeySetting('resetView', value);
+      setupResetViewKeyBinding(value);
+    });
+
+    setupHotkeyInput('setThumbHotkeyDisplay', 'setThumb', (value) => {
+      saveHotkeySetting('setThumb', value);
+      setupSetThumbKeyBinding(value);
+    });
+
+    setupHotkeyInput('maximizeHotkeyDisplay', 'maximize', (value) => {
+      saveHotkeySetting('maximize', value);
+      setupMaximizeKeyBinding(value);
+    });
+
+    function resetSetThumbHotkey() {
+      saveHotkeySetting('setThumb', 'Alt+T');
+      setupSetThumbKeyBinding('Alt+T');
+    }
+
+    function resetMaximizeHotkey() {
+      saveHotkeySetting('maximize', 'Ctrl+F');
+      setupMaximizeKeyBinding('Ctrl+F');
+    }
+
+    function formatTime(ms) {
+      const totalSec = Math.floor(ms / 1000);
+      const h = Math.floor(totalSec / 3600);
+      const m = Math.floor((totalSec % 3600) / 60);
+      const s = totalSec % 60;
+      return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+    }
+
+    function getItemTimerDisplay(item) {
+      let total = item.timerTotal || 0;
+      if (item.timerRunning && item.timerStartedAt) {
+        total += Date.now() - item.timerStartedAt;
+      }
+      return formatTime(total);
+    }
+
+    function updateTimerDisplay(itemId) {
+      const container = whiteboard.querySelector(`[data-id="${itemId}"]`);
+      if (!container) return;
+      const item = items.find(i => i.assetId === itemId || i.id === itemId);
+      if (!item) return;
+      const timerEl = container.querySelector('.timer-display');
+      if (timerEl) {
+        timerEl.textContent = getItemTimerDisplay(item);
+        if (item.timerRunning) {
+          timerEl.classList.add('running');
+        } else {
+          timerEl.classList.remove('running');
+        }
+      }
+      const btnEl = container.querySelector('.timer-btn');
+      if (btnEl) {
+        if (item.timerRunning) {
+          btnEl.textContent = '\u23F8 停止';
+          btnEl.classList.add('running');
+        } else {
+          btnEl.textContent = '\u25B6 开始';
+          btnEl.classList.remove('running');
+        }
+      }
+    }
+
+    function startTimerUpdates() {
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        items.forEach(item => {
+          if (item.timerRunning) {
+            updateTimerDisplay(item.assetId);
+          }
+        });
+      }, 1000);
+    }
+
+    function stopTimerUpdates() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+    }
+
+    function toggleTimer(itemId) {
+      const item = items.find(i => i.assetId === itemId || i.id === itemId);
+      if (!item) return;
+      if (item.timerRunning) {
+        item.timerTotal += Date.now() - item.timerStartedAt;
+        item.timerStartedAt = null;
+        item.timerRunning = false;
+      } else {
+        item.timerStartedAt = Date.now();
+        item.timerRunning = true;
+      }
+      updateTimerDisplay(itemId);
+      scheduleSave();
+    }
+
+    function showTimerDialog(type, itemId) {
+      const item = items.find(i => i.assetId === itemId || i.id === itemId);
+      if (!item) return;
+
+      const currentMs = item.timerTotal || 0;
+      const currentHours = Math.floor(currentMs / 3600000);
+      const currentMinutes = Math.floor((currentMs % 3600000) / 60000);
+
+      const overlay = document.createElement('div');
+      overlay.id = 'timerDialog';
+      overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;';
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) overlay.remove();
+      });
+
+      const dialog = document.createElement('div');
+      dialog.style.cssText = 'background:#2d2d2d;padding:20px;border-radius:8px;min-width:280px;box-shadow:0 4px 20px rgba(0,0,0,0.5);pointer-events:auto;';
+      dialog.addEventListener('click', (e) => e.stopPropagation());
+
+      const title = document.createElement('div');
+      title.style.cssText = 'font-size:16px;font-weight:bold;color:#fff;margin-bottom:16px;';
+      title.textContent = type === 'add' ? '添加时间' : '设置时间';
+
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:16px;';
+
+      const hourInput = document.createElement('input');
+      hourInput.type = 'number';
+      hourInput.min = '0';
+      hourInput.max = '99';
+      hourInput.value = type === 'set' ? currentHours : 0;
+      hourInput.style.cssText = 'width:50px;padding:6px;background:#1a1a1a;border:1px solid #444;border-radius:4px;color:#fff;font-size:14px;text-align:center;-webkit-user-select:text;user-select:text;outline:none;';
+
+      const minuteInput = document.createElement('input');
+      minuteInput.type = 'number';
+      minuteInput.min = '0';
+      minuteInput.max = '59';
+      minuteInput.value = type === 'set' ? currentMinutes : 0;
+      minuteInput.style.cssText = 'width:50px;padding:6px;background:#1a1a1a;border:1px solid #444;border-radius:4px;color:#fff;font-size:14px;text-align:center;-webkit-user-select:text;user-select:text;outline:none;';
+
+      const hourSpan = document.createElement('span');
+      hourSpan.style.cssText = 'color:#999;font-size:14px;';
+      hourSpan.textContent = '时';
+
+      const minuteSpan = document.createElement('span');
+      minuteSpan.style.cssText = 'color:#999;font-size:14px;';
+      minuteSpan.textContent = '分';
+
+      row.appendChild(hourSpan);
+      row.appendChild(hourInput);
+      row.appendChild(minuteSpan);
+      row.appendChild(minuteInput);
+
+      const hint = document.createElement('div');
+      hint.style.cssText = 'font-size:12px;color:#777;margin-bottom:16px;';
+      hint.textContent = type === 'add' ? `当前时间: ${currentHours}小时${currentMinutes}分钟 (添加后将累加)` : `当前时间: ${currentHours}小时${currentMinutes}分钟`;
+
+      const btnRow = document.createElement('div');
+      btnRow.style.cssText = 'display:flex;justify-content:flex-end;gap:8px;';
+
+      const cancelBtn = document.createElement('button');
+      cancelBtn.textContent = '取消';
+      cancelBtn.style.cssText = 'padding:8px 16px;background:#3a3a3a;border:none;border-radius:4px;color:#ddd;cursor:pointer;font-size:14px;';
+      cancelBtn.onclick = () => overlay.remove();
+
+      const confirmBtn = document.createElement('button');
+      confirmBtn.textContent = '确定';
+      confirmBtn.style.cssText = 'padding:8px 16px;background:#4a90d9;border:none;border-radius:4px;color:#fff;cursor:pointer;font-size:14px;';
+      confirmBtn.onclick = () => {
+        const hours = parseInt(hourInput.value) || 0;
+        const minutes = parseInt(minuteInput.value) || 0;
+        const addMs = (hours * 3600 + minutes * 60) * 1000;
+
+        if (type === 'add') {
+          item.timerTotal = (item.timerTotal || 0) + addMs;
+        } else {
+          item.timerTotal = addMs;
+        }
+
+        updateTimerDisplay(itemId);
+        scheduleSave();
+        overlay.remove();
+      };
+
+      btnRow.appendChild(cancelBtn);
+      btnRow.appendChild(confirmBtn);
+
+      dialog.appendChild(title);
+      dialog.appendChild(row);
+      dialog.appendChild(hint);
+      dialog.appendChild(btnRow);
+      overlay.appendChild(dialog);
+      document.body.appendChild(overlay);
+      dialog.style.display = 'block';
+      hourInput.focus();
+      hourInput.select();
+    }
+
+    function createTimerBar(item) {
+      const bar = document.createElement('div');
+      bar.className = 'card-timer';
+      bar.addEventListener('mousedown', (e) => e.stopPropagation());
+      bar.addEventListener('click', (e) => e.stopPropagation());
+
+      const display = document.createElement('span');
+      display.className = 'timer-display';
+      display.textContent = getItemTimerDisplay(item);
+
+      const btn = document.createElement('button');
+      btn.className = 'timer-btn' + (item.timerRunning ? ' running' : '');
+      btn.textContent = item.timerRunning ? '\u23F8 停止' : '\u25B6 开始';
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleTimer(item.assetId || item.id);
+      });
+
+      bar.appendChild(display);
+      bar.appendChild(btn);
+      return bar;
+    }
+
+    async function init() {
+      const loadingEl = document.getElementById('loadingOverlay');
+      loadingEl.classList.remove('hidden');
+
+      try {
+        await window.whiteboardAPI.ensureDataDir();
+        const settings = await window.whiteboardAPI.getSettings();
+        window._appSettings = settings;
+
+        const globalHotkeyEl = document.getElementById('globalHotkeyDisplay');
+        const deleteHotkeyEl = document.getElementById('deleteHotkeyDisplay');
+        const resetViewHotkeyEl = document.getElementById('resetViewHotkeyDisplay');
+        const setThumbHotkeyEl = document.getElementById('setThumbHotkeyDisplay');
+        const maximizeHotkeyEl = document.getElementById('maximizeHotkeyDisplay');
+
+        if (globalHotkeyEl) globalHotkeyEl.textContent = settings.globalHotkey || 'Alt+W';
+        if (deleteHotkeyEl) deleteHotkeyEl.textContent = settings.localHotkeys?.delete || 'Delete';
+        if (resetViewHotkeyEl) resetViewHotkeyEl.textContent = settings.localHotkeys?.resetView || '0';
+        if (setThumbHotkeyEl) setThumbHotkeyEl.textContent = settings.localHotkeys?.setThumb || 'Alt+T';
+        if (maximizeHotkeyEl) maximizeHotkeyEl.textContent = settings.localHotkeys?.maximize || 'Ctrl+F';
+
+        setupDeleteKeyBinding(settings.localHotkeys?.delete || 'Delete');
+        setupResetViewKeyBinding(settings.localHotkeys?.resetView || '0');
+        setupSetThumbKeyBinding(settings.localHotkeys?.setThumb || 'Alt+T');
+        setupMaximizeKeyBinding(settings.localHotkeys?.maximize || 'Ctrl+F');
+
+        const state = await window.whiteboardAPI.readState();
+
+        currentZoom = state.zoom || 1;
+        panX = state.panX || 0;
+        panY = state.panY || 0;
+        items = state.items || [];
+        itemIdCounter = items.length + 1;
+
+        items.forEach(item => {
+          if (!item.timerTotal) item.timerTotal = 0;
+          if (!item.timerRunning) item.timerRunning = false;
+          if (item.timerStartedAt && !item.timerRunning) item.timerStartedAt = null;
+          if (item.groupId && item.groupName) {
+            const existingGroup = groups.find(g => g.id === item.groupId);
+            if (!existingGroup) {
+              groups.push({ id: item.groupId, name: item.groupName, itemIds: [] });
+            }
+            const g = groups.find(g => g.id === item.groupId);
+            if (g && !g.itemIds.includes(item.id) && !g.itemIds.includes(item.assetId)) {
+              g.itemIds.push(item.id || item.assetId);
+            }
+          }
+        });
+
+        updateTransform();
+        updateZoomDisplay();
+
+        for (const item of items) {
+          if (item.type === 'image') {
+            await createImageElement(item);
+          } else {
+            await createFileElement(item);
+          }
+        }
+        updateItemCount();
+        startTimerUpdates();
+      } catch (err) {
+        console.error('Init error:', err);
+        alert('初始化错误: ' + err.message);
+      }
+
+      setTimeout(() => loadingEl.classList.add('hidden'), 300);
+    }
+
+    function updateTransform() {
+      whiteboard.style.transform = `translate(${panX}px, ${panY}px) scale(${currentZoom})`;
+      gridBg.style.backgroundPosition = `${-panX}px ${-panY}px`;
+      gridBg.style.backgroundSize = `${20 * currentZoom}px ${20 * currentZoom}px`;
+    }
+
+    function updateZoomDisplay() {
+      const percent = Math.round(currentZoom * 100);
+      zoomLevelEl.textContent = percent + '%';
+      zoomStatusEl.textContent = '缩放: ' + percent + '%';
+    }
+
+    function updateItemCount() {
+      itemCountEl.textContent = '项目: ' + items.length;
+    }
+
+    function scheduleSave() {
+      if (saveTimeout) clearTimeout(saveTimeout);
+      saveIndicator.classList.remove('show');
+      saveTimeout = setTimeout(async () => {
+        for (const item of items) {
+          await window.whiteboardAPI.saveItemState(item);
+        }
+        saveIndicator.classList.add('show');
+        setTimeout(() => saveIndicator.classList.remove('show'), 1500);
+      }, 500);
+    }
+
+    function pushUndo(action) {
+      undoStack.push(action);
+      if (undoStack.length > 50) undoStack.shift();
+    }
+
+    function undoAction() {
+      if (undoStack.length === 0) return;
+      const action = undoStack.pop();
+      if (action.type === 'delete') {
+        for (const itemData of action.items) {
+          const container = itemData.type === 'image'
+            ? createImageContainer(itemData.id, itemData.assetId, itemData.originalName)
+            : createFileContainer(itemData.id, itemData.assetId, itemData.originalName);
+          container.style.left = itemData.x + 'px';
+          container.style.top = itemData.y + 'px';
+          container.style.width = itemData.width + 'px';
+          container.style.height = itemData.height + 'px';
+          whiteboard.appendChild(container);
+          const timerBar = createTimerBar(itemData);
+          container.appendChild(timerBar);
+          updateTimerDisplay(itemData.assetId || itemData.id);
+          items.push(itemData);
+        }
+        updateItemCount();
+        scheduleSave();
+      } else if (action.type === 'clear') {
+        items = action.items;
+        whiteboard.innerHTML = '';
+        for (const item of items) {
+          if (item.type === 'image') createImageElement(item);
+          else createFileElement(item);
+        }
+        updateItemCount();
+        scheduleSave();
+      }
+    }
+
+    async function testClipboard() {
+      try {
+        const filesData = await window.whiteboardAPI.readClipboardFiles();
+        if (filesData && filesData.length > 0) {
+          for (const fileData of filesData) {
+            const buffer = Uint8Array.from(atob(fileData.buffer), c => c.charCodeAt(0));
+            await addFileFromBuffer(buffer, fileData.filename);
+          }
+          return;
+        }
+
+        const clipboardData = await window.whiteboardAPI.readClipboardImage();
+        if (clipboardData && clipboardData.buffer) {
+          const buffer = Uint8Array.from(atob(clipboardData.buffer), c => c.charCodeAt(0));
+          await addFileFromBuffer(buffer, clipboardData.filename);
+          return;
+        }
+
+        alert('剪贴板为空，请先复制图片或文件');
+      } catch (err) {
+        alert('错误: ' + err.message);
+      }
+    }
+
+    async function addFile() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.multiple = true;
+      input.onchange = async (e) => {
+        for (const file of e.target.files) {
+          await addFileToWhiteboard(file);
+        }
+      };
+      input.click();
+    }
+
+    async function createItemOnWhiteboard(buffer, filename) {
+      const id = `item_${itemIdCounter++}`;
+      const ext = filename.split('.').pop().toLowerCase();
+      const isImage = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'].includes(ext);
+
+      const assetResult = await window.whiteboardAPI.addAsset(Array.from(buffer), filename);
+
+      const container = isImage
+        ? createImageContainer(id, assetResult.assetId, filename)
+        : createFileContainer(id, assetResult.assetId, filename);
+
+      const centerX = (window.innerWidth / 2 - panX) / currentZoom - 100;
+      const centerY = (window.innerHeight / 2 - panY) / currentZoom - 100;
+
+      container.style.left = centerX + 'px';
+      container.style.top = centerY + 'px';
+
+      whiteboard.appendChild(container);
+
+      if (isImage) {
+        const img = container.querySelector('img');
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = () => reject(new Error('图片加载失败'));
+          setTimeout(() => reject(new Error('图片加载超时')), 10000);
+        });
+      }
+
+      const newItem = {
+        id: id,
+        assetId: assetResult.assetId,
+        originalName: filename,
+        cardName: '',
+        type: isImage ? 'image' : 'file',
+        x: centerX,
+        y: centerY,
+        width: 0,
+        height: 0,
+        timerTotal: 0,
+        timerRunning: false,
+        timerStartedAt: null,
+        cardTags: [],
+        cardAnnotation: '',
+        cardUrl: ''
+      };
+      items.push(newItem);
+
+      const timerBar = createTimerBar(newItem);
+      container.appendChild(timerBar);
+      updateTimerDisplay(assetResult.assetId);
+
+      const width = isImage ? Math.min(container.offsetWidth, 400) : 120;
+      const height = isImage ? Math.min(container.offsetHeight, 400) : 120;
+      container.style.width = width + 'px';
+      container.style.height = height + 'px';
+      newItem.width = width;
+      newItem.height = height;
+
+      selectItem(container);
+      updateItemCount();
+      scheduleSave();
+    }
+
+    async function addFileToWhiteboard(file) {
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const buffer = new Uint8Array(arrayBuffer);
+        await createItemOnWhiteboard(buffer, file.name);
+      } catch (err) {
+        console.error('addFileToWhiteboard error:', err);
+        alert('添加失败: ' + err.message);
+      }
+    }
+
+    async function addFileFromBuffer(buffer, filename) {
+      try {
+        await createItemOnWhiteboard(buffer, filename);
+      } catch (err) {
+        console.error('addFileFromBuffer error:', err);
+        alert('添加失败: ' + err.message);
+      }
+    }
+
+    function createImageContainer(id, assetId, originalName) {
+      const container = document.createElement('div');
+      container.className = 'image-item';
+      container.dataset.id = assetId;
+      container.dataset.assetId = assetId;
+      container.dataset.originalName = originalName || '';
+      container.style.zIndex = zIndex++;
+
+      const imgWrapper = document.createElement('div');
+      imgWrapper.className = 'img-wrapper';
+      const img = document.createElement('img');
+      imgWrapper.appendChild(img);
+      container.appendChild(imgWrapper);
+
+      const loadImg = async () => {
+        const thumbUrl = await window.whiteboardAPI.getAssetThumbnail(assetId);
+        if (thumbUrl) {
+          img.src = thumbUrl;
+        } else if (assetId && assetId.startsWith('item_')) {
+          const dataUrl = await window.whiteboardAPI.readFileAsBase64(assetId);
+          if (dataUrl) img.src = dataUrl;
+        }
+      };
+      loadImg();
+
+      const handles = ['nw', 'ne', 'sw', 'se'];
+      handles.forEach(pos => {
+        const handle = document.createElement('div');
+        handle.className = `resize-handle ${pos}`;
+        handle.dataset.pos = pos;
+        container.appendChild(handle);
+      });
+
+      container.addEventListener('mousedown', onMouseDown);
+      container.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        selectItem(container);
+        window.whiteboardAPI.showCardContextMenu({
+          id: id,
+          assetId: assetId,
+          originalName: originalName || '',
+          itemType: 'image'
+        });
+      });
+
+      return container;
+    }
+
+    function createFileContainer(id, assetId, originalName) {
+      const container = document.createElement('div');
+      container.className = 'file-item';
+      container.dataset.id = assetId;
+      container.dataset.assetId = assetId;
+      container.style.zIndex = zIndex++;
+      container.style.display = 'flex';
+      container.style.flexDirection = 'column';
+      container.style.overflow = 'hidden';
+
+      const ext = originalName ? '.' + originalName.split('.').pop().toLowerCase() : '';
+
+      const thumbWrapper = document.createElement('div');
+      thumbWrapper.className = 'file-thumb-wrapper';
+      thumbWrapper.style.flex = '1';
+      thumbWrapper.style.minHeight = '0';
+      thumbWrapper.style.display = 'flex';
+      thumbWrapper.style.alignItems = 'center';
+      thumbWrapper.style.justifyContent = 'center';
+      thumbWrapper.style.overflow = 'hidden';
+
+      const loadFileContent = async () => {
+        const thumbUrl = await window.whiteboardAPI.getAssetThumbnail(assetId);
+        if (thumbUrl) {
+          const img = document.createElement('img');
+          img.className = 'file-thumb';
+          img.style.maxWidth = '100%';
+          img.style.maxHeight = '100%';
+          img.style.objectFit = 'contain';
+          img.style.pointerEvents = 'none';
+          thumbWrapper.appendChild(img);
+          img.src = thumbUrl;
+        } else {
+          const iconDiv = document.createElement('div');
+          iconDiv.className = 'icon';
+          iconDiv.style.fontSize = '48px';
+          iconDiv.textContent = getIconForFile(originalName);
+          thumbWrapper.appendChild(iconDiv);
+        }
+      };
+      loadFileContent();
+
+      container.appendChild(thumbWrapper);
+
+      const nameDiv = document.createElement('div');
+      nameDiv.className = 'filename';
+      nameDiv.textContent = originalName;
+      nameDiv.style.flexShrink = '0';
+      container.appendChild(nameDiv);
+
+      const handles = ['nw', 'ne', 'sw', 'se'];
+      handles.forEach(pos => {
+        const handle = document.createElement('div');
+        handle.className = `resize-handle ${pos}`;
+        handle.dataset.pos = pos;
+        container.appendChild(handle);
+      });
+
+      container.addEventListener('mousedown', onMouseDown);
+      container.addEventListener('dblclick', async () => {
+        await window.whiteboardAPI.openFile(assetId);
+      });
+      container.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        selectItem(container);
+        window.whiteboardAPI.showCardContextMenu({
+          id: id,
+          assetId: assetId,
+          originalName: originalName || '',
+          itemType: 'file'
+        });
+      });
+
+      return container;
+    }
+
+    async function createImageElement(item) {
+      const assetId = item.assetId || item.file;
+      const container = createImageContainer(item.id, assetId, item.originalName);
+      container.style.width = item.width + 'px';
+      container.style.height = item.height + 'px';
+      container.style.left = item.x + 'px';
+      container.style.top = item.y + 'px';
+      whiteboard.appendChild(container);
+
+      const timerBar = createTimerBar(item);
+      container.appendChild(timerBar);
+      updateTimerDisplay(item.assetId || item.id);
+    }
+
+    async function createFileElement(item) {
+      const assetId = item.assetId || item.file;
+      const container = createFileContainer(item.id, assetId, item.originalName);
+      container.style.width = item.width + 'px';
+      container.style.height = item.height + 'px';
+      container.style.left = item.x + 'px';
+      container.style.top = item.y + 'px';
+      whiteboard.appendChild(container);
+
+      const timerBar = createTimerBar(item);
+      container.appendChild(timerBar);
+      updateTimerDisplay(item.assetId || item.id);
+    }
+
+    function selectItem(item, addToSelection = false) {
+      if (!addToSelection) {
+        selectedItems.forEach(el => el.classList.remove('selected'));
+        selectedItems.clear();
+      }
+      if (selectedItem && !addToSelection) {
+        selectedItem.classList.remove('selected');
+      }
+      selectedItem = item;
+      if (item) {
+        item.classList.add('selected');
+        selectedItems.add(item);
+        item.style.zIndex = zIndex++;
+      }
+      if (todoPanelOpen) renderTodoList();
+      if (propPanelOpen) {
+        if (item) {
+          renderPropPanel(item.dataset.id);
+        } else {
+          document.getElementById('propContent').innerHTML = '<div class="prop-no-selection">选择卡片查看属性</div>';
+        }
+      }
+    }
+
+    function clearSelection() {
+      selectedItems.forEach(el => el.classList.remove('selected'));
+      selectedItems.clear();
+      selectedItem = null;
+      if (todoPanelOpen) renderTodoList();
+      if (propPanelOpen) {
+        document.getElementById('propContent').innerHTML = '<div class="prop-no-selection">选择卡片查看属性</div>';
+      }
+    }
+
+    function onMouseDown(e) {
+      const item = e.currentTarget;
+      const handle = e.target.classList.contains('resize-handle');
+
+      if (e.button === 1) {
+        e.preventDefault();
+        isPanning = true;
+        panStart.x = e.clientX - panX;
+        panStart.y = e.clientY - panY;
+        document.addEventListener('mousemove', onPanMove);
+        document.addEventListener('mouseup', onPanEnd);
+        return;
+      }
+
+      const addToSelection = e.shiftKey;
+      if (handle) {
+        if (!selectedItems.has(item)) {
+          selectItem(item);
+        }
+        isResizing = true;
+        item.resizeStart = {
+          x: e.clientX,
+          y: e.clientY,
+          width: item.offsetWidth,
+          height: item.offsetHeight,
+          handle: e.target.dataset.pos,
+          left: item.offsetLeft,
+          top: item.offsetTop
+        };
+      } else if (addToSelection) {
+        if (selectedItems.has(item)) {
+          item.classList.remove('selected');
+          selectedItems.delete(item);
+          selectedItem = selectedItems.size > 0 ? [...selectedItems][selectedItems.size - 1] : null;
+        } else {
+          selectItem(item, true);
+        }
+      } else {
+        if (!selectedItems.has(item)) {
+          selectItem(item);
+        }
+        isDragging = true;
+        dragItem = item;
+        dragOffset.x = e.clientX - item.offsetLeft * currentZoom - panX;
+        dragOffset.y = e.clientY - item.offsetTop * currentZoom - panY;
+      }
+
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+    }
+
+    function onPanMove(e) {
+      if (!isPanning) return;
+      panX = e.clientX - panStart.x;
+      panY = e.clientY - panStart.y;
+      updateTransform();
+    }
+
+    function onPanEnd() {
+      isPanning = false;
+      document.removeEventListener('mousemove', onPanMove);
+      document.removeEventListener('mouseup', onPanEnd);
+      scheduleSave();
+    }
+
+    let wasDragging = false;
+
+    function onMouseMove(e) {
+      if (isDragging && dragItem) {
+        wasDragging = true;
+        let x = (e.clientX - dragOffset.x - panX) / currentZoom;
+        let y = (e.clientY - dragOffset.y - panY) / currentZoom;
+        const dx = x - dragItem.offsetLeft;
+        const dy = y - dragItem.offsetTop;
+        dragItem.style.left = x + 'px';
+        dragItem.style.top = y + 'px';
+        selectedItems.forEach(el => {
+          if (el !== dragItem) {
+            el.style.left = (el.offsetLeft + dx) + 'px';
+            el.style.top = (el.offsetTop + dy) + 'px';
+          }
+        });
+        updateGroupBoxes();
+      } else if (isResizing && selectedItem) {
+        const start = selectedItem.resizeStart;
+        const dx = (e.clientX - start.x) / currentZoom;
+        const dy = (e.clientY - start.y) / currentZoom;
+        let newWidth = start.width;
+        let newHeight = start.height;
+        let newLeft = start.left;
+        let newTop = start.top;
+
+        if (start.handle.includes('e')) newWidth += dx;
+        if (start.handle.includes('w')) { newWidth -= dx; newLeft += dx; }
+        if (start.handle.includes('s')) newHeight += dy;
+        if (start.handle.includes('n')) { newHeight -= dy; newTop += dy; }
+
+        if (newWidth > 50) {
+          selectedItem.style.width = newWidth + 'px';
+          selectedItem.style.left = newLeft + 'px';
+        }
+        if (newHeight > 50) {
+          selectedItem.style.height = newHeight + 'px';
+          selectedItem.style.top = newTop + 'px';
+        }
+      } else if (isBoxSelecting) {
+        const container = document.getElementById('canvas-container');
+        const rect = container.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+        const x1 = Math.min(boxSelectStart.screenX, mx);
+        const y1 = Math.min(boxSelectStart.screenY, my);
+        const x2 = Math.max(boxSelectStart.screenX, mx);
+        const y2 = Math.max(boxSelectStart.screenY, my);
+        boxSelectRect.style.left = x1 + 'px';
+        boxSelectRect.style.top = y1 + 'px';
+        boxSelectRect.style.width = (x2 - x1) + 'px';
+        boxSelectRect.style.height = (y2 - y1) + 'px';
+      }
+    }
+
+    function onMouseUp(e) {
+      if (dragItem) {
+        selectedItems.forEach(el => {
+          const item = items.find(i => i.assetId === el.dataset.id || i.id === el.dataset.id);
+          if (item) {
+            item.x = parseFloat(el.style.left);
+            item.y = parseFloat(el.style.top);
+          }
+        });
+      }
+      if (isResizing && selectedItem) {
+        const item = items.find(i => i.assetId === selectedItem.dataset.id || i.id === selectedItem.dataset.id);
+        if (item) {
+          item.width = selectedItem.offsetWidth;
+          item.height = selectedItem.offsetHeight;
+          item.x = selectedItem.offsetLeft;
+          item.y = selectedItem.offsetTop;
+        }
+      }
+      if (isBoxSelecting && e) {
+        lastBoxSelectEnd = { clientX: e.clientX, clientY: e.clientY };
+      }
+      if (isBoxSelecting) {
+        isBoxSelecting = false;
+        boxSelectRect.style.display = 'none';
+      }
+      isDragging = false;
+      isResizing = false;
+      dragItem = null;
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      scheduleSave();
+      updateGroupBoxes();
+    }
+
+    function deleteSelected() {
+      if (selectedItems.size === 0) return;
+      
+      [...selectedItems].forEach(async el => {
+        const id = el.dataset.id;
+        const item = items.find(i => i.assetId === id || i.id === id);
+        if (item) {
+          pushUndo({ type: 'delete', items: [{ ...item }] });
+          el.remove();
+          await window.whiteboardAPI.deleteItemState(id);
+          items = items.filter(i => (i.assetId || i.id) !== id);
+        }
+      });
+      
+      clearSelection();
+      updateItemCount();
+      scheduleSave();
+    }
+
+    function clearAll() {
+      if (items.length === 0) return;
+      pushUndo({ type: 'clear', items: [...items] });
+      whiteboard.innerHTML = '';
+      items = [];
+      selectedItem = null;
+      updateItemCount();
+      scheduleSave();
+    }
+
+    function zoomIn() {
+      currentZoom += 0.1;
+      if (currentZoom > 5) currentZoom = 5;
+      updateTransform();
+      updateZoomDisplay();
+      scheduleSave();
+    }
+
+    function zoomOut() {
+      currentZoom -= 0.1;
+      if (currentZoom < 0.1) currentZoom = 0.1;
+      updateTransform();
+      updateZoomDisplay();
+      scheduleSave();
+    }
+
+    function resetView() {
+      currentZoom = 1;
+      panX = 0;
+      panY = 0;
+      updateTransform();
+      updateZoomDisplay();
+      scheduleSave();
+    }
+
+    function startBoxSelect(e) {
+      if (e.button !== 0 || e.ctrlKey || e.metaKey) return;
+      if (e.target.closest('.image-item') || e.target.closest('.file-item') || e.target.closest('#selectionBox')) return;
+      if (e.target.closest('#toolbar') || e.target.closest('#leftToolbar') || e.target.closest('#titlebar') || e.target.closest('#status-bar')) return;
+      if (e.target.closest('#settingsPanel') || e.target.closest('#appSettingsPanel') || e.target.closest('#todoPanel') || e.target.closest('#propPanel')) return;
+      e.preventDefault();
+      isBoxSelecting = true;
+      lastBoxSelectEnd = null;
+      const container = document.getElementById('canvas-container');
+      const containerRect = container.getBoundingClientRect();
+      const sx = e.clientX - containerRect.left;
+      const sy = e.clientY - containerRect.top;
+      boxSelectStart.worldX = (sx - panX) / currentZoom;
+      boxSelectStart.worldY = (sy - panY) / currentZoom;
+      boxSelectStart.screenX = sx;
+      boxSelectStart.screenY = sy;
+      boxSelectRect = document.getElementById('selectionBox');
+      boxSelectRect.style.display = 'block';
+      boxSelectRect.style.left = sx + 'px';
+      boxSelectRect.style.top = sy + 'px';
+      boxSelectRect.style.width = '0px';
+      boxSelectRect.style.height = '0px';
+      clearSelection();
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onBoxSelectEnd);
+    }
+
+    document.addEventListener('contextmenu', (e) => {
+      if (!e.target.closest('.image-item') && !e.target.closest('.file-item')) {
+        e.preventDefault();
+      }
+    });
+
+    document.addEventListener('mousedown', (e) => {
+      if (isBoxSelecting) return;
+      if (e.target.closest('#timerDialog') || e.target.closest('input[type="number"]')) return;
+      const container = document.getElementById('canvas-container');
+      const rect = container.getBoundingClientRect();
+      if (e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) {
+        if (e.button === 1) {
+          e.preventDefault();
+          isPanning = true;
+          panStart.x = e.clientX - panX;
+          panStart.y = e.clientY - panY;
+          document.addEventListener('mousemove', onPanMove);
+          document.addEventListener('mouseup', onPanEnd);
+          return;
+        }
+        if (e.button === 0 && !e.target.closest('.image-item') && !e.target.closest('.file-item')) {
+          startBoxSelect(e);
+        }
+      }
+    }, true);
+
+    function onBoxSelectEnd(e) {
+      isBoxSelecting = false;
+      boxSelectRect.style.display = 'none';
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onBoxSelectEnd);
+
+      const endEvent = lastBoxSelectEnd || e;
+      const containerRect = document.getElementById('canvas-container').getBoundingClientRect();
+      const sx = endEvent.clientX - containerRect.left;
+      const sy = endEvent.clientY - containerRect.top;
+      const wx = (sx - panX) / currentZoom;
+      const wy = (sy - panY) / currentZoom;
+
+      const x1 = Math.min(boxSelectStart.worldX, wx);
+      const y1 = Math.min(boxSelectStart.worldY, wy);
+      const x2 = Math.max(boxSelectStart.worldX, wx);
+      const y2 = Math.max(boxSelectStart.worldY, wy);
+
+      if (x2 - x1 < 3 && y2 - y1 < 3) return;
+
+      items.forEach(item => {
+        const cx = item.x + item.width / 2;
+        const cy = item.y + item.height / 2;
+        if (cx >= x1 && cx <= x2 && cy >= y1 && cy <= y2) {
+          const el = whiteboard.querySelector(`[data-id="${item.id}"]`);
+          if (el) {
+            el.classList.add('selected');
+            selectedItems.add(el);
+            selectedItem = el;
+          }
+        }
+      });
+      if (todoPanelOpen) renderTodoList();
+      if (propPanelOpen && selectedItem) {
+        renderPropPanel(selectedItem.dataset.id);
+      }
+      scheduleSave();
+    }
+
+    document.getElementById('canvas-container').addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -0.1 : 0.1;
+      const newZoom = Math.max(0.1, Math.min(5, currentZoom + delta));
+
+      const rect = document.getElementById('canvas-container').getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      const worldX = (mouseX - panX) / currentZoom;
+      const worldY = (mouseY - panY) / currentZoom;
+
+      currentZoom = newZoom;
+      panX = mouseX - worldX * currentZoom;
+      panY = mouseY - worldY * currentZoom;
+
+      updateTransform();
+      updateZoomDisplay();
+      scheduleSave();
+    }, { passive: false });
+
+    document.addEventListener('paste', async (e) => {
+      e.preventDefault();
+
+      try {
+        const filesData = await window.whiteboardAPI.readClipboardFiles();
+        if (filesData && filesData.length > 0) {
+          for (const fileData of filesData) {
+            const buffer = Uint8Array.from(atob(fileData.buffer), c => c.charCodeAt(0));
+            await addFileFromBuffer(buffer, fileData.filename);
+          }
+          return;
+        }
+      } catch (err) {
+        console.error('readClipboardFiles error:', err);
+      }
+
+      try {
+        const clipboardData = await window.whiteboardAPI.readClipboardImage();
+        if (clipboardData && clipboardData.buffer) {
+          const buffer = Uint8Array.from(atob(clipboardData.buffer), c => c.charCodeAt(0));
+          await addFileFromBuffer(buffer, clipboardData.filename);
+          return;
+        }
+      } catch (err) {
+        console.error('readClipboardImage error:', err);
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (wasDragging) {
+        wasDragging = false;
+        return;
+      }
+      if (e.target === whiteboard || e.target.id === 'canvas-container' || e.target.id === 'grid-bg') {
+        selectItem(null);
+      }
+    });
+
+    document.addEventListener('contextmenu', (e) => {
+      if (!e.target.closest('.image-item') && !e.target.closest('.file-item')) {
+        e.preventDefault();
+      }
+    });
+
+    const canvasContainer = document.getElementById('canvas-container');
+    canvasContainer.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      e.dataTransfer.dropEffect = 'copy';
+    });
+
+    canvasContainer.addEventListener('dragenter', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    });
+
+    canvasContainer.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const files = e.dataTransfer.files;
+      if (files && files.length > 0) {
+        for (const file of files) {
+          await addFileToWhiteboard(file);
+        }
+        return;
+      }
+
+      const dragItems = e.dataTransfer.items;
+      if (dragItems && dragItems.length > 0) {
+        for (let i = 0; i < dragItems.length; i++) {
+          if (dragItems[i].kind === 'file') {
+            const file = dragItems[i].getAsFile();
+            if (file) {
+              await addFileToWhiteboard(file);
+            }
+          }
+        }
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      const settings = window._appSettings || {};
+      const deleteKey = settings.localHotkeys?.delete || 'Delete';
+      const resetViewKey = settings.localHotkeys?.resetView || '0';
+      const setThumbKey = settings.localHotkeys?.setThumb || 'Ctrl+Shift+T';
+      if (e.key === deleteKey && selectedItem && document.activeElement === document.body) {
+        e.preventDefault();
+        deleteSelected();
+      }
+      if (e.key === resetViewKey && document.activeElement === document.body) {
+        e.preventDefault();
+        resetView();
+      }
+    });
+
+    window.whiteboardAPI.onLibraryChanged(async () => {
+      whiteboard.innerHTML = '';
+      items = [];
+      selectedItem = null;
+      stopTimerUpdates();
+      await init();
+    });
+
+    window.whiteboardAPI.onTimerAction((data) => {
+      if (data.type === 'add' || data.type === 'set') {
+        showTimerDialog(data.type, data.itemId);
+      }
+    });
+
+    window.whiteboardAPI.onCreateGroup((data) => {
+      createGroup(data.itemId);
+    });
+
+    window.whiteboardAPI.onRemoveFromGroup((data) => {
+      removeFromGroup(data.itemId);
+    });
+
+    let groups = [];
+    let currentGroupId = null;
+
+    function createGroup(itemId) {
+      const item = items.find(i => i.assetId === itemId || i.id === itemId);
+      if (!item) return;
+
+      if (!item.groupId) {
+        const groupId = 'group_' + Date.now();
+        const groupName = '分组' + (groups.length + 1);
+        
+        item.groupId = groupId;
+        item.groupName = groupName;
+        
+        groups.push({ id: groupId, name: groupName, itemIds: [itemId] });
+        
+        if (!item.cardTags) item.cardTags = [];
+        item.cardTags.push(groupName);
+        
+        renderTags(item);
+        scheduleSave();
+        alert('已创建分组: ' + groupName);
+      } else {
+        alert('该卡片已在分组中');
+      }
+    }
+
+    function removeFromGroup(itemId) {
+      const item = items.find(i => i.assetId === itemId || i.id === itemId);
+      if (!item || !item.groupId) return;
+
+      const group = groups.find(g => g.id === item.groupId);
+      if (group) {
+        group.itemIds = group.itemIds.filter(id => id !== itemId);
+        if (group.itemIds.length === 0) {
+          groups = groups.filter(g => g.id !== group.id);
+        }
+      }
+
+      const groupName = item.groupName;
+      item.groupId = null;
+      item.groupName = null;
+
+      if (item.cardTags) {
+        item.cardTags = item.cardTags.filter(t => t !== groupName);
+      }
+
+      renderTags(item);
+      scheduleSave();
+      alert('已从分组移除');
+    }
+
+    function addSelectedToGroup() {
+      if (selectedItems.size === 0) {
+        alert('请先选择卡片');
+        return;
+      }
+
+      const existingGroup = prompt('请输入分组名称（留空则创建新分组）：');
+      let groupId, groupName;
+
+      if (existingGroup && existingGroup.trim()) {
+        const existing = groups.find(g => g.name === existingGroup.trim());
+        if (existing) {
+          groupId = existing.id;
+          groupName = existing.name;
+        } else {
+          groupId = 'group_' + Date.now();
+          groupName = existingGroup.trim();
+          groups.push({ id: groupId, name: groupName, itemIds: [] });
+        }
+      } else {
+        groupId = 'group_' + Date.now();
+        groupName = '分组' + (groups.length + 1);
+        groups.push({ id: groupId, name: groupName, itemIds: [] });
+      }
+
+      selectedItems.forEach(el => {
+        const itemId = el.dataset.id || el.dataset.assetId;
+        const item = items.find(i => i.assetId === itemId || i.id === itemId);
+        if (item && !item.groupId) {
+          item.groupId = groupId;
+          item.groupName = groupName;
+          groups.find(g => g.id === groupId).itemIds.push(itemId);
+          
+          if (!item.cardTags) item.cardTags = [];
+          if (!item.cardTags.includes(groupName)) {
+            item.cardTags.push(groupName);
+          }
+        }
+      });
+
+      scheduleSave();
+      alert('已添加到分组: ' + groupName);
+      updateGroupBoxes();
+    }
+
+    function getTagColor(tag) {
+      if (tag.startsWith('分组')) {
+        const idx = parseInt(tag.replace('分组', '')) || 1;
+        const colors = ['#4a90d9', '#e91e63', '#4caf50', '#ff9800', '#9c27b0'];
+        return colors[(idx - 1) % colors.length];
+      }
+      let hash = 0;
+      for (let i = 0; i < tag.length; i++) {
+        hash = tag.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      return '#4a90d9';
+    }
+
+    function updateGroupBoxes() {
+      document.querySelectorAll('.group-box').forEach(el => el.remove());
+
+      const allTags = new Set();
+      items.forEach(item => {
+        (item.cardTags || []).forEach(tag => allTags.add(tag));
+      });
+
+      allTags.forEach(tag => {
+        const tagItems = items.filter(i => (i.cardTags || []).includes(tag));
+        if (tagItems.length === 0) return;
+
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+        tagItems.forEach(item => {
+          if (item.x !== undefined && item.y !== undefined) {
+            minX = Math.min(minX, item.x);
+            minY = Math.min(minY, item.y);
+            maxX = Math.max(maxX, item.x + (item.width || 120));
+            maxY = Math.max(maxY, item.y + (item.height || 120));
+          }
+        });
+
+        if (minX === Infinity) return;
+
+        const padding = 20;
+        const box = document.createElement('div');
+        box.className = 'group-box';
+        box.style.left = (minX - padding) + 'px';
+        box.style.top = (minY - padding) + 'px';
+        box.style.width = (maxX - minX + padding * 2) + 'px';
+        box.style.height = (maxY - minY + padding * 2) + 'px';
+        box.style.borderColor = getTagColor(tag);
+        box.style.backgroundColor = getTagColor(tag) + '15';
+
+        const label = document.createElement('div');
+        label.className = 'group-box-label';
+        label.textContent = tag;
+        label.style.backgroundColor = getTagColor(tag);
+        box.appendChild(label);
+
+        whiteboard.appendChild(box);
+      });
+    }
+
+    let lastPanX = 0, lastPanY = 0;
+    setInterval(() => {
+      if (panX !== lastPanX || panY !== lastPanY) {
+        lastPanX = panX;
+        lastPanY = panY;
+        updateGroupBoxes();
+      }
+    }, 100);
+
+    const originalUpdateTransform = updateTransform;
+    updateTransform = function() {
+      originalUpdateTransform();
+      updateGroupBoxes();
+    };
+
+    init();
+  </script>
+</body>
+</html>
