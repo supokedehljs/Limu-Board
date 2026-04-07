@@ -631,6 +631,53 @@
       vertical-align: middle;
     }
 
+    .todo-folder {
+      margin-bottom: 4px;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .todo-folder-header {
+      display: flex;
+      align-items: center;
+      padding: 8px 10px;
+      background: #2a2a2a;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .todo-folder-header:hover {
+      background: #333;
+    }
+
+    .todo-folder-icon {
+      margin-right: 8px;
+      font-size: 14px;
+    }
+
+    .todo-folder-name {
+      flex: 1;
+      color: #ddd;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .todo-folder-count {
+      color: #777;
+      font-size: 11px;
+      background: #3a3a3a;
+      padding: 2px 6px;
+      border-radius: 10px;
+    }
+
+    .todo-folder-body {
+      padding-left: 8px;
+    }
+
+    .todo-folder.collapsed .todo-folder-body {
+      display: none;
+    }
+
     #propPanel {
       position: fixed;
       top: 36px;
@@ -1393,6 +1440,8 @@
       }
     }
 
+    let expandedFolders = new Set(); // 跟踪展开的文件夹
+    
     function renderTodoList() {
       const listEl = document.getElementById('todoList');
       const searchVal = (document.getElementById('todoSearch').value || '').toLowerCase();
@@ -1409,36 +1458,125 @@
         return;
       }
       
-      listEl.innerHTML = '';
+      const tagGroups = {};
+      const uncategorized = [];
+      
       for (const item of filtered) {
-        const el = document.createElement('div');
-        el.className = 'todo-item' + (selectedItem && selectedItem.dataset.id === item.id ? ' active' : '');
-        el.className += item.archived ? ' archived' : '';
-        const icon = item.type === 'image' ? '\uD83D\uDDBC' : getIconForFile(item.originalName);
-        const timerText = getItemTimerDisplay(item);
-        const isRunning = item.timerRunning;
-        el.innerHTML = `
-          <span class="todo-item-icon">${icon}</span>
-          <div class="todo-item-info">
-            <div class="todo-item-name">${escapeHtml(item.cardName || item.originalName || '未命名')}${item.archived ? ' (已归档)' : ''}</div>
-            <div class="todo-item-timer${isRunning ? ' running' : ''}">${timerText}</div>
+        const tags = item.cardTags || [];
+        if (tags.length === 0) {
+          uncategorized.push(item);
+        } else {
+          for (const tag of tags) {
+            if (!tagGroups[tag]) tagGroups[tag] = [];
+            tagGroups[tag].push(item);
+          }
+        }
+      }
+      
+      const sortedTags = Object.keys(tagGroups).sort((a, b) => tagGroups[b].length - tagGroups[a].length);
+      
+      listEl.innerHTML = '';
+      
+      if (uncategorized.length > 0) {
+        const folder = document.createElement('div');
+        folder.className = 'todo-folder';
+        const folderId = 'uncategorized';
+        if (expandedFolders.has(folderId)) {
+          folder.classList.remove('collapsed');
+        } else {
+          folder.classList.add('collapsed');
+        }
+        folder.innerHTML = `
+          <div class="todo-folder-header">
+            <span class="todo-folder-icon">📁</span>
+            <span class="todo-folder-name">未分类</span>
+            <span class="todo-folder-count">${uncategorized.length}</span>
           </div>
         `;
-        el.addEventListener('click', () => {
-          const container = whiteboard.querySelector(`[data-id="${item.id}"]`);
-          if (container) {
-            selectItem(container);
-            panX = window.innerWidth / 2 - item.x * currentZoom - item.width * currentZoom / 2;
-            panY = window.innerHeight / 2 - item.y * currentZoom - item.height * currentZoom / 2;
-            updateTransform();
-            scheduleSave();
+        const folderBody = document.createElement('div');
+        folderBody.className = 'todo-folder-body';
+        for (const item of uncategorized) {
+          folderBody.appendChild(createTodoItemElement(item));
+        }
+        folder.appendChild(folderBody);
+        folder.querySelector('.todo-folder-header').addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (folder.classList.contains('collapsed')) {
+            folder.classList.remove('collapsed');
+            expandedFolders.add(folderId);
+          } else {
+            folder.classList.add('collapsed');
+            expandedFolders.delete(folderId);
           }
         });
-        el.addEventListener('dblclick', () => {
-          window.whiteboardAPI.openFile(item.assetId);
-        });
-        listEl.appendChild(el);
+        listEl.appendChild(folder);
       }
+      
+      for (const tag of sortedTags) {
+        const folder = document.createElement('div');
+        folder.className = 'todo-folder';
+        const folderId = `tag-${tag}`;
+        if (expandedFolders.has(folderId)) {
+          folder.classList.remove('collapsed');
+        } else {
+          folder.classList.add('collapsed');
+        }
+        folder.innerHTML = `
+          <div class="todo-folder-header">
+            <span class="todo-folder-icon">📁</span>
+            <span class="todo-folder-name">${escapeHtml(tag)}</span>
+            <span class="todo-folder-count">${tagGroups[tag].length}</span>
+          </div>
+        `;
+        const folderBody = document.createElement('div');
+        folderBody.className = 'todo-folder-body';
+        for (const item of tagGroups[tag]) {
+          folderBody.appendChild(createTodoItemElement(item));
+        }
+        folder.appendChild(folderBody);
+        folder.querySelector('.todo-folder-header').addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (folder.classList.contains('collapsed')) {
+            folder.classList.remove('collapsed');
+            expandedFolders.add(folderId);
+          } else {
+            folder.classList.add('collapsed');
+            expandedFolders.delete(folderId);
+          }
+        });
+        listEl.appendChild(folder);
+      }
+    }
+    
+    function createTodoItemElement(item) {
+      const el = document.createElement('div');
+      el.className = 'todo-item' + (selectedItem && selectedItem.dataset.id === item.id ? ' active' : '');
+      el.className += item.archived ? ' archived' : '';
+      const icon = item.type === 'image' ? '\uD83D\uDDBC' : getIconForFile(item.originalName);
+      const timerText = getItemTimerDisplay(item);
+      const isRunning = item.timerRunning;
+      el.innerHTML = `
+        <span class="todo-item-icon">${icon}</span>
+        <div class="todo-item-info">
+          <div class="todo-item-name">${escapeHtml(item.cardName || item.originalName || '未命名')}${item.archived ? ' (已归档)' : ''}</div>
+          <div class="todo-item-timer${isRunning ? ' running' : ''}">${timerText}</div>
+        </div>
+      `;
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const container = whiteboard.querySelector(`[data-id="${item.id}"]`) || whiteboard.querySelector(`[data-asset-id="${item.assetId}"]`);
+        if (container) {
+          selectItem(container, e.shiftKey);
+          panX = window.innerWidth / 2 - item.x * currentZoom - item.width * currentZoom / 2;
+          panY = window.innerHeight / 2 - item.y * currentZoom - item.height * currentZoom / 2;
+          updateTransform();
+          scheduleSave();
+        }
+      });
+      el.addEventListener('dblclick', () => {
+        window.whiteboardAPI.openFile(item.assetId);
+      });
+      return el;
     }
 
     function renderPropPanel(itemId) {
