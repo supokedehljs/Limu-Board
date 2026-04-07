@@ -3821,13 +3821,8 @@
           pushUndo({ type: 'delete', items: [{ ...item }] });
           el.remove();
           
-          const attachments = item.attachments || [];
-          for (const assetId of attachments) {
-            await window.whiteboardAPI.deleteAsset(assetId);
-          }
-          if (item.assetId && !attachments.includes(item.assetId)) {
-            await window.whiteboardAPI.deleteAsset(item.assetId);
-          }
+          const assetIdToDelete = item.assetId || item.id;
+          await window.whiteboardAPI.deleteItemState(assetIdToDelete);
           
           items = items.filter(i => (i.assetId || i.id) !== id);
         }
@@ -3841,6 +3836,12 @@
     function clearAll() {
       if (items.length === 0) return;
       pushUndo({ type: 'clear', items: [...items] });
+      
+      items.forEach(async (item) => {
+        const assetIdToDelete = item.assetId || item.id;
+        await window.whiteboardAPI.deleteItemState(assetIdToDelete);
+      });
+      
       whiteboard.innerHTML = '';
       items = [];
       selectedItem = null;
