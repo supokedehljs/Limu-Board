@@ -211,23 +211,69 @@
 
     .group-box {
       position: absolute;
-      border: 2px dashed;
-      border-radius: 8px;
-      pointer-events: none;
+      border: 2px solid;
+      border-radius: 20px;
+      pointer-events: auto;
+      cursor: pointer;
       z-index: 1;
-      opacity: 0.6;
+    }
+
+    .group-box:hover {
+      border-width: 3px;
     }
 
     .group-box-label {
       position: absolute;
-      top: -20px;
-      left: 0;
+      top: -70px;
+      left: 50%;
+      transform: translateX(-50%);
       background: inherit;
       color: white;
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-size: 11px;
+      padding: 6px 16px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
       white-space: nowrap;
+      text-align: center;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+      pointer-events: none;
+    }
+
+    .group-box-sub {
+      display: block;
+      font-size: 11px;
+      font-weight: normal;
+      opacity: 0.9;
+      margin-top: 2px;
+    }
+
+    .group-box:hover {
+      border-width: 3px;
+    }
+
+    .group-box-info {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, calc(-50% + 24px));
+      color: rgba(255,255,255,0.8);
+      font-size: 12px;
+      white-space: nowrap;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+      pointer-events: none;
+    }
+
+    .group-box-time {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, calc(-50% - 24px));
+      color: rgba(255,255,255,0.9);
+      font-size: 14px;
+      white-space: nowrap;
+      font-weight: 500;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+      pointer-events: none;
     }
 
     .image-item {
@@ -236,7 +282,7 @@
       user-select: none;
       border: 2px solid transparent;
       background: #2d2d2d;
-      border-radius: 6px;
+      border-radius: 16px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.4);
       display: flex;
       flex-direction: column;
@@ -286,7 +332,7 @@
       user-select: none;
       border: 2px solid transparent;
       background: #2d2d2d;
-      border-radius: 8px;
+      border-radius: 16px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -339,15 +385,18 @@
     }
 
     .timer-btn {
-      padding: 2px 8px;
+      width: 24px;
+      height: 24px;
       border: 1px solid #555;
       background: #3a3a3a;
-      border-radius: 3px;
+      border-radius: 50%;
       cursor: pointer;
-      font-size: 11px;
-      color: #ddd;
       transition: all 0.15s;
-      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: #ddd;
     }
 
     .timer-btn:hover {
@@ -1827,13 +1876,20 @@
     }
 
     function updateTimerDisplay(itemId) {
-      const container = whiteboard.querySelector(`[data-id="${itemId}"]`);
+      let container = whiteboard.querySelector(`[data-id="${itemId}"]`);
+      if (!container) {
+        container = whiteboard.querySelector(`[data-asset-id="${itemId}"]`);
+      }
       if (!container) return;
-      const item = items.find(i => i.assetId === itemId || i.id === itemId);
+      const item = items.find(i => (i.assetId && i.assetId === itemId) || i.id === itemId);
       if (!item) return;
       const timerEl = container.querySelector('.timer-display');
       if (timerEl) {
-        timerEl.textContent = getItemTimerDisplay(item);
+        let total = item.timerTotal || 0;
+        if (item.timerRunning && item.timerStartedAt) {
+          total += Date.now() - item.timerStartedAt;
+        }
+        timerEl.textContent = formatTime(total);
         if (item.timerRunning) {
           timerEl.classList.add('running');
         } else {
@@ -1843,10 +1899,10 @@
       const btnEl = container.querySelector('.timer-btn');
       if (btnEl) {
         if (item.timerRunning) {
-          btnEl.textContent = '\u23F8 停止';
+          btnEl.textContent = '\u25CF';
           btnEl.classList.add('running');
         } else {
-          btnEl.textContent = '\u25B6 开始';
+          btnEl.textContent = '\u25B6';
           btnEl.classList.remove('running');
         }
       }
@@ -1856,11 +1912,14 @@
       if (timerInterval) clearInterval(timerInterval);
       timerInterval = setInterval(() => {
         items.forEach(item => {
-          if (item.timerRunning) {
-            updateTimerDisplay(item.assetId);
+          if (item.timerRunning && item.timerStartedAt) {
+            const itemId = item.assetId || item.id;
+            if (itemId) {
+              updateTimerDisplay(itemId);
+            }
           }
         });
-      }, 1000);
+      }, 500);
     }
 
     function stopTimerUpdates() {
@@ -1953,15 +2012,17 @@
       const confirmBtn = document.createElement('button');
       confirmBtn.textContent = '确定';
       confirmBtn.style.cssText = 'padding:8px 16px;background:#4a90d9;border:none;border-radius:4px;color:#fff;cursor:pointer;font-size:14px;';
-      confirmBtn.onclick = () => {
+      confirmBtn.onclick = async () => {
         const hours = parseInt(hourInput.value) || 0;
         const minutes = parseInt(minuteInput.value) || 0;
         const addMs = (hours * 3600 + minutes * 60) * 1000;
 
         if (type === 'add') {
           item.timerTotal = (item.timerTotal || 0) + addMs;
+          await window.whiteboardAPI.addTimer(item.assetId || item.id, hours, minutes);
         } else {
           item.timerTotal = addMs;
+          await window.whiteboardAPI.setTimer(item.assetId || item.id, hours, minutes);
         }
 
         updateTimerDisplay(itemId);
@@ -1995,7 +2056,7 @@
 
       const btn = document.createElement('button');
       btn.className = 'timer-btn' + (item.timerRunning ? ' running' : '');
-      btn.textContent = item.timerRunning ? '\u23F8 停止' : '\u25B6 开始';
+      btn.textContent = item.timerRunning ? '\u25CF' : '\u25B6';
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         toggleTimer(item.assetId || item.id);
@@ -2987,6 +3048,35 @@
       updateGroupBoxes();
     }
 
+    function getItemTimerDisplay(item) {
+      const total = item.timerTotal || 0;
+      return formatTime(total);
+    }
+
+    let tagMeta = {};
+
+    async function saveTagMeta() {
+      await window.whiteboardAPI.saveTagMeta(tagMeta);
+    }
+
+    async function loadTagMeta() {
+      const loaded = await window.whiteboardAPI.loadTagMeta();
+      if (loaded) {
+        tagMeta = loaded;
+      }
+    }
+
+    function getTagMeta(tag) {
+      if (!tagMeta[tag]) {
+        tagMeta[tag] = { name: tag, targetDate: null, created: Date.now() };
+      }
+      return tagMeta[tag];
+    }
+
+    function setTagMeta(tag, data) {
+      tagMeta[tag] = { ...getTagMeta(tag), ...data };
+    }
+
     function getTagColor(tag) {
       if (tag.startsWith('分组')) {
         const idx = parseInt(tag.replace('分组', '')) || 1;
@@ -3013,6 +3103,7 @@
         if (tagItems.length === 0) return;
 
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        let totalTimer = 0;
 
         tagItems.forEach(item => {
           if (item.x !== undefined && item.y !== undefined) {
@@ -3021,11 +3112,14 @@
             maxX = Math.max(maxX, item.x + (item.width || 120));
             maxY = Math.max(maxY, item.y + (item.height || 120));
           }
+          if (item.timerTotal) {
+            totalTimer += item.timerTotal;
+          }
         });
 
         if (minX === Infinity) return;
 
-        const padding = 20;
+        const padding = 30;
         const box = document.createElement('div');
         box.className = 'group-box';
         box.style.left = (minX - padding) + 'px';
@@ -3033,16 +3127,115 @@
         box.style.width = (maxX - minX + padding * 2) + 'px';
         box.style.height = (maxY - minY + padding * 2) + 'px';
         box.style.borderColor = getTagColor(tag);
-        box.style.backgroundColor = getTagColor(tag) + '15';
+        box.style.backgroundColor = getTagColor(tag) + '30';
+
+        const meta = getTagMeta(tag);
+        const displayName = meta.name || tag;
+
+        let subText = `${tagItems.length} 张卡片`;
+        if (totalTimer > 0) {
+          subText += ' · ' + formatTime(totalTimer);
+        }
+        if (meta.targetDate) {
+          const now = new Date();
+          now.setHours(0, 0, 0, 0);
+          const target = new Date(meta.targetDate);
+          target.setHours(0, 0, 0, 0);
+          const diff = Math.ceil((target - now) / (1000 * 60 * 60 * 24));
+          if (diff > 0) subText += ' · 剩余 ' + diff + ' 天';
+          else if (diff < 0) subText += ' · 已过 ' + Math.abs(diff) + ' 天';
+          else subText += ' · 今天到期';
+        }
 
         const label = document.createElement('div');
         label.className = 'group-box-label';
-        label.textContent = tag;
+        label.innerHTML = `${displayName}<span class="group-box-sub">${subText}</span>`;
         label.style.backgroundColor = getTagColor(tag);
         box.appendChild(label);
 
+        box.addEventListener('click', (e) => {
+          e.stopPropagation();
+          showTagMetaPanel(tag);
+        });
+
         whiteboard.appendChild(box);
       });
+    }
+
+    function showTagMetaPanel(tag) {
+      const meta = getTagMeta(tag);
+      const contentEl = document.getElementById('propContent');
+      if (!contentEl) return;
+
+      contentEl.innerHTML = `
+        <div class="prop-section">
+          <div class="prop-section-title">标签/分组</div>
+          <div class="prop-field">
+            <label>标签名称</label>
+            <input type="text" id="propTagName" value="${escapeHtml(meta.name || tag)}">
+          </div>
+          <div class="prop-field">
+            <label>目标日期</label>
+            <input type="date" id="propTagDate" value="${meta.targetDate || ''}">
+          </div>
+          <div class="prop-field">
+            <label>天数计算</label>
+            <div id="propTagDays" style="color:#4a90d9;font-size:14px;padding:4px 0;">-</div>
+          </div>
+          <div class="prop-field">
+            <label>包含卡片</label>
+            <div style="color:#999;font-size:13px;padding:4px 0;">${items.filter(i => (i.cardTags || []).includes(tag)).length} 张</div>
+          </div>
+        </div>
+      `;
+
+      const nameInput = document.getElementById('propTagName');
+      const dateInput = document.getElementById('propTagDate');
+      const daysEl = document.getElementById('propTagDays');
+
+      function updateDays() {
+        if (dateInput.value) {
+          const now = new Date();
+          now.setHours(0, 0, 0, 0);
+          const target = new Date(dateInput.value);
+          target.setHours(0, 0, 0, 0);
+          const diff = Math.ceil((target - now) / (1000 * 60 * 60 * 24));
+          if (diff > 0) daysEl.textContent = '剩余 ' + diff + ' 天';
+          else if (diff < 0) daysEl.textContent = '已过 ' + Math.abs(diff) + ' 天';
+          else daysEl.textContent = '今天到期';
+        } else {
+          daysEl.textContent = '-';
+        }
+      }
+
+      nameInput.addEventListener('input', () => {
+        const oldName = tag;
+        const newName = nameInput.value.trim();
+        if (newName && newName !== oldName) {
+          setTagMeta(oldName, { name: newName });
+          items.forEach(item => {
+            const idx = item.cardTags?.indexOf(oldName);
+            if (idx !== undefined && idx >= 0) {
+              item.cardTags[idx] = newName;
+            }
+          });
+          saveTagMeta();
+          scheduleSave();
+          updateGroupBoxes();
+        }
+      });
+
+      dateInput.addEventListener('change', () => {
+        setTagMeta(tag, { targetDate: dateInput.value });
+        saveTagMeta();
+        updateDays();
+        updateGroupBoxes();
+      });
+
+      updateDays();
+      if (propPanelOpen) {
+        document.getElementById('propPanel').classList.add('open');
+      }
     }
 
     let lastPanX = 0, lastPanY = 0;
@@ -3059,6 +3252,8 @@
       originalUpdateTransform();
       updateGroupBoxes();
     };
+
+    loadTagMeta();
 
     init();
   </script>

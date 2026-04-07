@@ -772,3 +772,56 @@ ipcMain.handle('read-file-as-base64', async (event, filePath) => {
     return null;
   }
 });
+
+ipcMain.handle('add-timer', async (event, { itemId, hours, minutes }) => {
+  try {
+    const assetsPath = await getAssetsPath();
+    const itemDir = path.join(assetsPath, itemId);
+    const metadataPath = path.join(itemDir, 'metadata.json');
+    const metadata = JSON.parse(await fs.readFile(metadataPath, 'utf-8'));
+    metadata.timerTotal = (metadata.timerTotal || 0) + (hours * 3600 + minutes * 60) * 1000;
+    await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
+    return true;
+  } catch (err) {
+    console.error('add-timer error:', err);
+    return false;
+  }
+});
+
+ipcMain.handle('set-timer', async (event, { itemId, hours, minutes }) => {
+  try {
+    const assetsPath = await getAssetsPath();
+    const itemDir = path.join(assetsPath, itemId);
+    const metadataPath = path.join(itemDir, 'metadata.json');
+    const metadata = JSON.parse(await fs.readFile(metadataPath, 'utf-8'));
+    metadata.timerTotal = (hours * 3600 + minutes * 60) * 1000;
+    await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
+    return true;
+  } catch (err) {
+    console.error('set-timer error:', err);
+    return false;
+  }
+});
+
+ipcMain.handle('save-tag-meta', async (event, meta) => {
+  try {
+    const libPath = await getActiveLibraryPath();
+    const metaPath = path.join(libPath, 'tag-meta.json');
+    await fs.writeFile(metaPath, JSON.stringify(meta, null, 2));
+    return true;
+  } catch (err) {
+    console.error('save-tag-meta error:', err);
+    return false;
+  }
+});
+
+ipcMain.handle('load-tag-meta', async () => {
+  try {
+    const libPath = await getActiveLibraryPath();
+    const metaPath = path.join(libPath, 'tag-meta.json');
+    const data = await fs.readFile(metaPath, 'utf-8');
+    return JSON.parse(data);
+  } catch (err) {
+    return null;
+  }
+});

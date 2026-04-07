@@ -38,5 +38,7 @@ contextBridge.exposeInMainWorld('whiteboardAPI', {
   setCardThumbnail: (assetId, buffer) => ipcRenderer.invoke('set-card-thumbnail', { assetId, buffer }),
   onTimerAction: (callback) => ipcRenderer.on('timer-action', (e, data) => callback(data)),
   onCreateGroup: (callback) => ipcRenderer.on('create-group', (e, data) => callback(data)),
-  onRemoveFromGroup: (callback) => ipcRenderer.on('remove-from-group', (e, data) => callback(data))
+  onRemoveFromGroup: (callback) => ipcRenderer.on('remove-from-group', (e, data) => callback(data)),
+  saveTagMeta: (meta) => ipcRenderer.invoke('save-tag-meta', meta),
+  loadTagMeta: () => ipcRenderer.invoke('load-tag-meta')
 });
