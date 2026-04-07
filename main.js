@@ -12,22 +12,31 @@ let hotkeyRegistered = false;
 
 function getDataPath() {
   if (!dataPath) {
-    dataPath = path.join(app.getAppPath(), '.whiteboard-data');
+    dataPath = path.join(app.getPath('userData'), 'limu-board-data');
   }
   return dataPath;
 }
 
-function getDefaultLibraryPath() {
-  return path.join(getDataPath(), 'library');
+async function getActiveLibraryPath() {
+  const config = await getLibrariesConfig();
+  if (config.activeId && config.libraries.length > 0) {
+    const lib = config.libraries.find(l => l.id === config.activeId);
+    if (lib) {
+      activeLibraryPath = lib.path;
+      return activeLibraryPath;
+    }
+  }
+  return null;
 }
 
-function getLibrariesConfigPath() {
-  const configPath = path.join(getDefaultLibraryPath(), 'libraries.json');
-  return configPath;
+async function hasActiveLibrary() {
+  const libPath = await getActiveLibraryPath();
+  return libPath !== null;
 }
 
 async function getLibrariesConfig() {
-  const configPath = getLibrariesConfigPath();
+  const dataPath = getDataPath();
+  const configPath = path.join(dataPath, 'libraries.json');
   try {
     const data = await fs.readFile(configPath, 'utf-8');
     return JSON.parse(data);
@@ -37,17 +46,18 @@ async function getLibrariesConfig() {
 }
 
 async function saveLibrariesConfig(config) {
-  const configPath = getLibrariesConfigPath();
-  await fs.mkdir(path.dirname(configPath), { recursive: true });
+  const dataPath = getDataPath();
+  await fs.mkdir(dataPath, { recursive: true });
+  const configPath = path.join(dataPath, 'libraries.json');
   await fs.writeFile(configPath, JSON.stringify(config, null, 2));
 }
 
-function getSettingsPath() {
-  return path.join(getDataPath(), 'settings.json');
-}
-
 async function loadSettings() {
-  const settingsPath = getSettingsPath();
+  const libPath = await getActiveLibraryPath();
+  if (!libPath) {
+    return { globalHotkey: 'Alt+W', localHotkeys: {} };
+  }
+  const settingsPath = path.join(libPath, 'settings.json');
   try {
     const data = await fs.readFile(settingsPath, 'utf-8');
     return JSON.parse(data);
@@ -57,7 +67,9 @@ async function loadSettings() {
 }
 
 async function saveSettings(settings) {
-  const settingsPath = getSettingsPath();
+  const libPath = await getActiveLibraryPath();
+  if (!libPath) return;
+  const settingsPath = path.join(libPath, 'settings.json');
   await fs.writeFile(settingsPath, JSON.stringify(settings, null, 2));
 }
 
@@ -96,31 +108,28 @@ async function getActiveLibraryPath() {
       return activeLibraryPath;
     }
   }
-  const defaultPath = getDefaultLibraryPath();
-  try {
-    await fs.mkdir(defaultPath, { recursive: true });
-  } catch {}
-  activeLibraryPath = defaultPath;
-  return activeLibraryPath;
+  return null;
 }
 
 async function getStatePath() {
-  return path.join(await getActiveLibraryPath(), 'state.json');
+  const libPath = await getActiveLibraryPath();
+  if (!libPath) return null;
+  return path.join(libPath, 'state.json');
 }
 
 async function getAssetsPath() {
-  return path.join(await getActiveLibraryPath(), 'assets');
+  const libPath = await getActiveLibraryPath();
+  if (!libPath) return null;
+  return path.join(libPath, 'assets');
 }
 
 async function ensureDataDir() {
-  const dir = getDataPath();
-  await fs.mkdir(dir, { recursive: true });
-  const filesDir = path.join(dir, 'files');
-  await fs.mkdir(filesDir, { recursive: true });
   const libPath = await getActiveLibraryPath();
+  if (!libPath) return null;
+  
   const assetsDir = path.join(libPath, 'assets');
   await fs.mkdir(assetsDir, { recursive: true });
-  return dir;
+  return libPath;
 }
 
 function generateAssetId() {
@@ -280,11 +289,19 @@ ipcMain.handle('ensure-data-dir', async () => {
   return ensureDataDir();
 });
 
+ipcMain.handle('has-active-library', async () => {
+  return await hasActiveLibrary();
+});
+
 ipcMain.handle('add-asset', async (event, { buffer, filename, cardId }) => {
   try {
+    const activeLibraryPath = await getActiveLibraryPath();
+    if (!activeLibraryPath) {
+      throw new Error('No active library');
+    }
+    
     await ensureDataDir();
     const assetId = generateAssetId();
-    const activeLibraryPath = await getActiveLibraryPath();
     const assetsPath = path.join(activeLibraryPath, 'assets');
     
     let assetDir;
@@ -468,7 +485,12 @@ ipcMain.handle('save-file', async (event, { buffer, filename }) => {
 
 ipcMain.handle('read-state', async () => {
   try {
-    const assetsPath = path.join(await getActiveLibraryPath(), 'assets');
+    const libPath = await getActiveLibraryPath();
+    if (!libPath) {
+      return { version: 1, zoom: 1, panX: 0, panY: 0, items: [] };
+    }
+    
+    const assetsPath = path.join(libPath, 'assets');
     await fs.mkdir(assetsPath, { recursive: true });
     
     const entries = await fs.readdir(assetsPath);
@@ -495,7 +517,10 @@ ipcMain.handle('read-state', async () => {
 
 ipcMain.handle('write-state', async (event, state) => {
   try {
-    const assetsPath = path.join(await getActiveLibraryPath(), 'assets');
+    const libPath = await getActiveLibraryPath();
+    if (!libPath) return;
+    
+    const assetsPath = path.join(libPath, 'assets');
     await fs.mkdir(assetsPath, { recursive: true });
     
     if (state.items && Array.isArray(state.items)) {
@@ -517,7 +542,9 @@ ipcMain.handle('write-state', async (event, state) => {
 
 ipcMain.handle('save-item-state', async (event, item) => {
   try {
-    const assetsPath = path.join(await getActiveLibraryPath(), 'assets');
+    const libPath = await getActiveLibraryPath();
+    if (!libPath) return;
+    const assetsPath = path.join(libPath, 'assets');
     const metadataPath = path.join(assetsPath, item.assetId || item.id, 'metadata.json');
     await fs.mkdir(path.dirname(metadataPath), { recursive: true });
     await fs.writeFile(metadataPath, JSON.stringify(item, null, 2));
@@ -529,6 +556,7 @@ ipcMain.handle('save-item-state', async (event, item) => {
 ipcMain.handle('delete-item-state', async (event, assetId) => {
   try {
     const libPath = await getActiveLibraryPath();
+    if (!libPath) return;
     const assetsPath = path.join(libPath, 'assets');
     let assetDir = path.join(assetsPath, assetId);
     
@@ -557,6 +585,8 @@ ipcMain.handle('delete-item-state', async (event, assetId) => {
 ipcMain.handle('open-file', async (event, assetId) => {
     try {
       const activeLibraryPath = await getActiveLibraryPath();
+      if (!activeLibraryPath) return;
+      
       const assetsPath = path.join(activeLibraryPath, 'assets');
       let assetDir = path.join(assetsPath, assetId);
       let found = false;
@@ -888,6 +918,7 @@ ipcMain.handle('set-timer', async (event, { itemId, hours, minutes }) => {
 ipcMain.handle('save-tag-meta', async (event, meta) => {
   try {
     const libPath = await getActiveLibraryPath();
+    if (!libPath) return false;
     const metaPath = path.join(libPath, 'tag-meta.json');
     await fs.writeFile(metaPath, JSON.stringify(meta, null, 2));
     return true;
@@ -900,6 +931,7 @@ ipcMain.handle('save-tag-meta', async (event, meta) => {
 ipcMain.handle('load-tag-meta', async () => {
   try {
     const libPath = await getActiveLibraryPath();
+    if (!libPath) return null;
     const metaPath = path.join(libPath, 'tag-meta.json');
     const data = await fs.readFile(metaPath, 'utf-8');
     return JSON.parse(data);
@@ -910,7 +942,10 @@ ipcMain.handle('load-tag-meta', async () => {
 
 ipcMain.handle('create-empty-card', async (event, { cardName }) => {
   try {
-    const assetsPath = await getAssetsPath();
+    const libPath = await getActiveLibraryPath();
+    if (!libPath) return { success: false, error: 'No library' };
+    
+    const assetsPath = path.join(libPath, 'assets');
     const assetId = generateAssetId();
     const assetDir = path.join(assetsPath, assetId);
     await fs.mkdir(assetDir, { recursive: true });

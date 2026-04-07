@@ -1615,6 +1615,7 @@
 
     let selectedItem = null;
     let selectedItems = new Set();
+    let hasLibrary = false;
     let dragItem = null;
     let isDragging = false;
     let isPanning = false;
@@ -2777,6 +2778,15 @@
       loadingEl.classList.remove('hidden');
 
       try {
+        hasLibrary = await window.whiteboardAPI.hasActiveLibrary();
+        
+        if (!hasLibrary) {
+          loadingEl.classList.add('hidden');
+          document.getElementById('hint').textContent = '请先在设置中添加或创建素材库';
+          document.getElementById('hint').style.display = 'block';
+          return;
+        }
+
         await window.whiteboardAPI.ensureDataDir();
         const settings = await window.whiteboardAPI.getSettings();
         window._appSettings = settings;
@@ -2963,6 +2973,10 @@
     }
 
     async function addFile() {
+      if (!hasLibrary) {
+        alert('请先添加或创建素材库');
+        return;
+      }
       const input = document.createElement('input');
       input.type = 'file';
       input.multiple = true;
@@ -3098,6 +3112,7 @@
     }
 
     async function addFileToWhiteboard(file) {
+      if (!hasLibrary) return;
       try {
         const arrayBuffer = await file.arrayBuffer();
         const buffer = new Uint8Array(arrayBuffer);
@@ -3991,6 +4006,8 @@
     document.addEventListener('paste', async (e) => {
       e.preventDefault();
 
+      if (!hasLibrary) return;
+
       const hasSelection = selectedItem !== null;
 
       if (hasSelection) {
@@ -4096,6 +4113,8 @@
     canvasContainer.addEventListener('drop', async (e) => {
       e.preventDefault();
       e.stopPropagation();
+
+      if (!hasLibrary) return;
 
       const files = e.dataTransfer.files;
       if (files && files.length > 0) {
