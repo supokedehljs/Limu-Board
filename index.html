@@ -2778,15 +2778,21 @@
       loadingEl.classList.remove('hidden');
 
       try {
-        hasLibrary = await window.whiteboardAPI.hasActiveLibrary();
+        console.log('Starting init...');
+        const hasLib = await window.whiteboardAPI.hasActiveLibrary();
+        console.log('hasActiveLibrary result:', hasLib);
+        hasLibrary = hasLib;
+        console.log('hasLibrary set to:', hasLibrary);
         
         if (!hasLibrary) {
+          console.log('No library found, showing prompt');
           loadingEl.classList.add('hidden');
           document.getElementById('hint').textContent = '请先在设置中添加或创建素材库';
           document.getElementById('hint').style.display = 'block';
           return;
         }
 
+        console.log('Library found, continuing init');
         await window.whiteboardAPI.ensureDataDir();
         const settings = await window.whiteboardAPI.getSettings();
         window._appSettings = settings;
@@ -2989,6 +2995,8 @@
     }
 
     async function createItemOnWhiteboard(buffer, filename, targetCardId = null) {
+      if (!hasLibrary) return;
+      
       const ext = filename.split('.').pop().toLowerCase();
       const isImage = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'].includes(ext);
 
@@ -3074,6 +3082,10 @@
     }
 
     async function createEmptyCard() {
+      if (!hasLibrary) {
+        alert('请先添加或创建素材库');
+        return;
+      }
       const result = await window.whiteboardAPI.createEmptyCard({ cardName: '' });
       if (!result || !result.assetId) {
         console.error('Failed to create empty card');
