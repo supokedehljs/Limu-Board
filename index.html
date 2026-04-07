@@ -215,7 +215,7 @@
       border-radius: 20px;
       pointer-events: auto;
       cursor: pointer;
-      z-index: 1;
+      z-index: 0;
     }
 
     .group-box:hover {
@@ -414,13 +414,37 @@
     }
 
     .resize-handle {
-      display: none;
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      background: transparent;
+      border-radius: 2px;
     }
 
-    .resize-handle.se { display: none; }
-    .resize-handle.sw { display: none; }
-    .resize-handle.ne { display: none; }
-    .resize-handle.nw { display: none; }
+    .resize-handle.se { 
+      display: block;
+      right: -6px;
+      bottom: -6px;
+      cursor: se-resize; 
+    }
+    .resize-handle.sw { 
+      display: block;
+      left: -6px;
+      bottom: -6px;
+      cursor: sw-resize; 
+    }
+    .resize-handle.ne { 
+      display: block;
+      right: -6px;
+      top: -6px;
+      cursor: ne-resize; 
+    }
+    .resize-handle.nw { 
+      display: block;
+      left: -6px;
+      top: -6px;
+      cursor: nw-resize; 
+    }
 
     #hint {
       position: fixed;
@@ -2525,19 +2549,31 @@
 
       const addToSelection = e.shiftKey;
       if (handle) {
-        if (!selectedItems.has(item)) {
-          selectItem(item);
-        }
         isResizing = true;
-        item.resizeStart = {
-          x: e.clientX,
-          y: e.clientY,
-          width: item.offsetWidth,
-          height: item.offsetHeight,
-          handle: e.target.dataset.pos,
-          left: item.offsetLeft,
-          top: item.offsetTop
-        };
+        
+        if (selectedItems.size > 1) {
+          selectedItems.forEach(el => {
+            el.resizeStart = {
+              x: e.clientX,
+              y: e.clientY,
+              width: el.offsetWidth,
+              height: el.offsetHeight,
+              handle: e.target.dataset.pos,
+              left: el.offsetLeft,
+              top: el.offsetTop
+            };
+          });
+        } else {
+          item.resizeStart = {
+            x: e.clientX,
+            y: e.clientY,
+            width: item.offsetWidth,
+            height: item.offsetHeight,
+            handle: e.target.dataset.pos,
+            left: item.offsetLeft,
+            top: item.offsetTop
+          };
+        }
       } else if (addToSelection) {
         if (selectedItems.has(item)) {
           item.classList.remove('selected');
@@ -2594,25 +2630,57 @@
         updateGroupBoxes();
       } else if (isResizing && selectedItem) {
         const start = selectedItem.resizeStart;
-        const dx = (e.clientX - start.x) / currentZoom;
-        const dy = (e.clientY - start.y) / currentZoom;
-        let newWidth = start.width;
-        let newHeight = start.height;
-        let newLeft = start.left;
-        let newTop = start.top;
+        
+        if (selectedItems.size > 1) {
+          const movePixels = (e.clientX - start.x) * 0.3;
+          const scale = Math.max(0.3, Math.min(3, 1 + movePixels / 200));
+          
+          let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+          selectedItems.forEach(el => {
+            minX = Math.min(minX, el.resizeStart.left);
+            minY = Math.min(minY, el.resizeStart.top);
+            maxX = Math.max(maxX, el.resizeStart.left + el.resizeStart.width);
+            maxY = Math.max(maxY, el.resizeStart.top + el.resizeStart.height);
+          });
+          const centerX = (minX + maxX) / 2;
+          const centerY = (minY + maxY) / 2;
+          
+          selectedItems.forEach(el => {
+            const origW = el.resizeStart.width;
+            const origH = el.resizeStart.height;
+            const origCX = el.resizeStart.left + origW / 2;
+            const origCY = el.resizeStart.top + origH / 2;
+            
+            const newW = Math.max(50, origW * scale);
+            const newH = Math.max(50, origH * scale);
+            
+            const newLeft = centerX + (origCX - centerX) * scale - newW / 2;
+            const newTop = centerY + (origCY - centerY) * scale - newH / 2;
+            
+            el.style.width = newW + 'px';
+            el.style.height = newH + 'px';
+            el.style.left = newLeft + 'px';
+            el.style.top = newTop + 'px';
+          });
+        } else {
+          let newWidth = start.width;
+          let newHeight = start.height;
+          let newLeft = start.left;
+          let newTop = start.top;
 
-        if (start.handle.includes('e')) newWidth += dx;
-        if (start.handle.includes('w')) { newWidth -= dx; newLeft += dx; }
-        if (start.handle.includes('s')) newHeight += dy;
-        if (start.handle.includes('n')) { newHeight -= dy; newTop += dy; }
+          if (start.handle.includes('e')) newWidth += dx;
+          if (start.handle.includes('w')) { newWidth -= dx; newLeft += dx; }
+          if (start.handle.includes('s')) newHeight += dy;
+          if (start.handle.includes('n')) { newHeight -= dy; newTop += dy; }
 
-        if (newWidth > 50) {
-          selectedItem.style.width = newWidth + 'px';
-          selectedItem.style.left = newLeft + 'px';
-        }
-        if (newHeight > 50) {
-          selectedItem.style.height = newHeight + 'px';
-          selectedItem.style.top = newTop + 'px';
+          if (newWidth > 50) {
+            selectedItem.style.width = newWidth + 'px';
+            selectedItem.style.left = newLeft + 'px';
+          }
+          if (newHeight > 50) {
+            selectedItem.style.height = newHeight + 'px';
+            selectedItem.style.top = newTop + 'px';
+          }
         }
       } else if (isBoxSelecting) {
         const container = document.getElementById('canvas-container');
@@ -2641,13 +2709,15 @@
         });
       }
       if (isResizing && selectedItem) {
-        const item = items.find(i => i.assetId === selectedItem.dataset.id || i.id === selectedItem.dataset.id);
-        if (item) {
-          item.width = selectedItem.offsetWidth;
-          item.height = selectedItem.offsetHeight;
-          item.x = selectedItem.offsetLeft;
-          item.y = selectedItem.offsetTop;
-        }
+        selectedItems.forEach(el => {
+          const item = items.find(i => i.assetId === el.dataset.id || i.id === el.dataset.id);
+          if (item) {
+            item.width = el.offsetWidth;
+            item.height = el.offsetHeight;
+            item.x = el.offsetLeft;
+            item.y = el.offsetTop;
+          }
+        });
       }
       if (isBoxSelecting && e) {
         lastBoxSelectEnd = { clientX: e.clientX, clientY: e.clientY };
@@ -2951,6 +3021,10 @@
       removeFromGroup(data.itemId);
     });
 
+    window.whiteboardAPI.onSelectSameTags((data) => {
+      selectSameTagsItems(data.itemId);
+    });
+
     let groups = [];
     let currentGroupId = null;
 
@@ -3001,6 +3075,35 @@
       renderTags(item);
       scheduleSave();
       alert('已从分组移除');
+    }
+
+    function selectSameTagsItems(itemId) {
+      const item = items.find(i => i.assetId === itemId || i.id === itemId);
+      if (!item || !item.cardTags || item.cardTags.length === 0) {
+        alert('该卡片没有标签');
+        return;
+      }
+
+      const tags = item.cardTags;
+      let selectedCount = 0;
+
+      items.forEach(i => {
+        if (i.assetId === itemId || i.id === itemId) return;
+        if (!i.cardTags) return;
+        
+        const hasSameTag = tags.some(tag => i.cardTags.includes(tag));
+        if (hasSameTag) {
+          const el = whiteboard.querySelector(`[data-id="${i.assetId}"]`) || whiteboard.querySelector(`[data-id="${i.id}"]`);
+          if (el && !selectedItems.has(el)) {
+            selectItem(el, true);
+            selectedCount++;
+          }
+        }
+      });
+
+      if (selectedCount === 0) {
+        alert('没有其他相同标签的卡片');
+      }
     }
 
     function addSelectedToGroup() {
@@ -3208,7 +3311,24 @@
         }
       }
 
-      nameInput.addEventListener('input', () => {
+      nameInput.addEventListener('change', () => {
+        const oldName = tag;
+        const newName = nameInput.value.trim();
+        if (newName && newName !== oldName) {
+          setTagMeta(oldName, { name: newName });
+          items.forEach(item => {
+            const idx = item.cardTags?.indexOf(oldName);
+            if (idx !== undefined && idx >= 0) {
+              item.cardTags[idx] = newName;
+            }
+          });
+          saveTagMeta();
+          scheduleSave();
+          updateGroupBoxes();
+        }
+      });
+
+      nameInput.addEventListener('blur', () => {
         const oldName = tag;
         const newName = nameInput.value.trim();
         if (newName && newName !== oldName) {

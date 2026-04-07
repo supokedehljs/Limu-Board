@@ -39,6 +39,7 @@ contextBridge.exposeInMainWorld('whiteboardAPI', {
   onTimerAction: (callback) => ipcRenderer.on('timer-action', (e, data) => callback(data)),
   onCreateGroup: (callback) => ipcRenderer.on('create-group', (e, data) => callback(data)),
   onRemoveFromGroup: (callback) => ipcRenderer.on('remove-from-group', (e, data) => callback(data)),
+  onSelectSameTags: (callback) => ipcRenderer.on('select-same-tags', (e, data) => callback(data)),
   saveTagMeta: (meta) => ipcRenderer.invoke('save-tag-meta', meta),
   loadTagMeta: () => ipcRenderer.invoke('load-tag-meta')
 });

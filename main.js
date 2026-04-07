@@ -689,6 +689,13 @@ ipcMain.handle('show-card-context-menu', async (event, { id, assetId, originalNa
   }));
   menu.append(new MenuItem({ type: 'separator' }));
   menu.append(new MenuItem({
+    label: '选择所有同标签',
+    click: () => {
+      event.sender.send('select-same-tags', { itemId: assetId || id });
+    }
+  }));
+  menu.append(new MenuItem({ type: 'separator' }));
+  menu.append(new MenuItem({
     label: '创建分组',
     click: () => {
       event.sender.send('create-group', { itemId: assetId || id });
