@@ -648,29 +648,71 @@ ipcMain.handle('read-clipboard-image', async () => {
 
 ipcMain.handle('read-clipboard-files', async () => {
   try {
-    const hasFiles = clipboard.has('FileNameW');
-    if (!hasFiles) return null;
+    const formats = clipboard.availableFormats();
+    if (!formats.includes('FileNameW') && !formats.includes('FileContents')) {
+      return null;
+    }
     const buf = clipboard.readBuffer('FileNameW');
-    if (!buf || buf.length < 20) return null;
+    if (!buf || buf.length < 4) return null;
+    
     const pFiles = buf.readUInt32LE(0);
-    if (pFiles >= buf.length) return null;
+    if (pFiles === 0 || pFiles >= buf.length) {
+      const files = [];
+      let offset = 0;
+      while (offset < buf.length - 1) {
+        const char = buf[offset];
+        if (char === 0) {
+          if (files.length > 0) break;
+          offset++;
+          continue;
+        }
+        let str = '';
+        while (offset < buf.length) {
+          const c = buf[offset];
+          if (c === 0) break;
+          str += String.fromCharCode(c);
+          offset++;
+        }
+        if (str.length > 0 && (str.includes(':') || str.includes('\\'))) {
+          files.push(str);
+        }
+        offset++;
+      }
+      if (files.length > 0) {
+        const results = [];
+        for (const filePath of files) {
+          try {
+            const stat = await fs.stat(filePath);
+            if (stat.isFile()) {
+              const buffer = await fs.readFile(filePath);
+              const filename = path.basename(filePath);
+              results.push({ buffer: buffer.toString('base64'), filename });
+            }
+          } catch {}
+        }
+        return results.length > 0 ? results : null;
+      }
+      return null;
+    }
+    
     const paths = [];
     let i = pFiles;
     while (i < buf.length - 1) {
-      const code = buf.readUInt16LE(i);
-      if (code === 0) {
-        if (paths.length > 0) break;
-        i += 2;
-        continue;
+      if (buf[i] === 0 && buf[i + 1] === 0) {
+        break;
       }
       let currentPath = '';
       while (i < buf.length - 1) {
-        const c = buf.readUInt16LE(i);
+        const low = buf[i];
+        const high = buf[i + 1];
+        if (low === 0 && high === 0) break;
         i += 2;
-        if (c === 0) break;
-        currentPath += String.fromCharCode(c);
+        currentPath += String.fromCharCode(low + (high << 8));
       }
-      if (currentPath.length > 0) paths.push(currentPath);
+      if (currentPath.length > 0 && (currentPath.includes(':') || currentPath.includes('\\'))) {
+        paths.push(currentPath);
+      }
+      i += 2;
     }
     if (paths.length === 0) return null;
     const results = [];

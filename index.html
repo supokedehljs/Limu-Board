@@ -2060,6 +2060,36 @@
       }
     }
 
+    async function updateCardContent(item, contentArea) {
+      const thumbAssetId = item.thumbnailAssetId || item.attachments?.[0];
+      if (thumbAssetId) {
+        const thumbUrl = await window.whiteboardAPI.getAssetThumbnail(thumbAssetId);
+        if (thumbUrl) {
+          contentArea.innerHTML = '';
+          contentArea.style.padding = '0';
+          const img = document.createElement('img');
+          img.style.maxWidth = '100%';
+          img.style.maxHeight = '100%';
+          img.style.objectFit = 'contain';
+          img.src = thumbUrl;
+          contentArea.appendChild(img);
+          return;
+        }
+      }
+      if (item.attachments && item.attachments.length > 0) {
+        const attachmentIds = item.attachments.slice(1);
+        if (attachmentIds.length > 0) {
+          contentArea.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;align-items:center;">
+            ${attachmentIds.map(a => `<div style="padding:4px 8px;background:#444;border-radius:4px;font-size:10px;color:#aaa;">附件</div>`).join('')}
+          </div>`;
+          contentArea.style.padding = '12px';
+          return;
+        }
+      }
+      contentArea.innerHTML = item.cardAnnotation || '拖拽文件到此处添加附件';
+      contentArea.style.padding = '12px';
+    }
+
     async function refreshWhiteboardItem(item) {
       const container = whiteboard.querySelector(`[data-item-id="${item.id}"]`);
       if (!container) return;
@@ -2067,23 +2097,7 @@
       if (item.type === 'card') {
         const contentArea = container.querySelector('.card-content-area');
         if (contentArea) {
-          const thumbAssetId = item.thumbnailAssetId || item.attachments?.[0];
-          if (thumbAssetId) {
-            const thumbUrl = await window.whiteboardAPI.getAssetThumbnail(thumbAssetId);
-            if (thumbUrl) {
-              contentArea.innerHTML = '';
-              contentArea.style.padding = '0';
-              const img = document.createElement('img');
-              img.style.maxWidth = '100%';
-              img.style.maxHeight = '100%';
-              img.style.objectFit = 'contain';
-              img.src = thumbUrl;
-              contentArea.appendChild(img);
-            }
-          } else {
-            contentArea.innerHTML = item.cardAnnotation || '拖拽文件到此处添加附件';
-            contentArea.style.padding = '12px';
-          }
+          await updateCardContent(item, contentArea);
         }
       } else {
         const imgWrapper = container.querySelector('.img-wrapper, .file-thumb-wrapper');
@@ -2999,7 +3013,7 @@
       if (!hasLibrary) return;
       
       const ext = filename.split('.').pop().toLowerCase();
-      const isImage = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'].includes(ext);
+      const isImage = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'svg', 'ico', 'tiff', 'tif'].includes(ext);
 
       const assetResult = await window.whiteboardAPI.addAsset(Array.from(buffer), filename, targetCardId);
 
@@ -3387,21 +3401,7 @@
             item.attachments.push(assetResult.assetId);
             if (!item.thumbnailAssetId) {
               item.thumbnailAssetId = assetResult.assetId;
-              const img = contentArea.querySelector('img');
-              if (img) {
-                const thumbUrl = await window.whiteboardAPI.getAssetThumbnail(assetResult.assetId);
-                if (thumbUrl) img.src = thumbUrl;
-              } else {
-                contentArea.innerHTML = '';
-                contentArea.style.padding = '0';
-                const img = document.createElement('img');
-                img.style.maxWidth = '100%';
-                img.style.maxHeight = '100%';
-                img.style.objectFit = 'contain';
-                const thumbUrl = await window.whiteboardAPI.getAssetThumbnail(assetResult.assetId);
-                img.src = thumbUrl || '';
-                contentArea.appendChild(img);
-              }
+              updateCardContent(item, contentArea);
             }
           }
           scheduleSave();
