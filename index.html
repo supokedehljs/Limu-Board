@@ -989,15 +989,13 @@
 
     .attachment-item {
       display: flex;
-      flex-direction: column;
       align-items: center;
-      padding: 8px;
+      padding: 8px 12px;
       background: #2a2a2a;
-      border-radius: 8px;
-      border: 2px solid transparent;
+      border-radius: 6px;
+      border: 1px solid transparent;
       cursor: pointer;
       transition: all 0.15s;
-      position: relative;
     }
 
     .attachment-item:hover {
@@ -1013,44 +1011,34 @@
       background: #3a3a3a;
     }
 
-    .attachment-preview {
-      width: 80px;
-      height: 80px;
-      border-radius: 6px;
-      overflow: hidden;
-      background: #1a1a1a;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 6px;
-    }
-
-    .attachment-preview img {
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain;
-    }
-
-    .attachment-name {
-      font-size: 10px;
-      color: #888;
-      text-align: center;
-      word-break: break-all;
-      max-width: 100%;
+    .attachment-name-text {
+      font-size: 12px;
+      color: #ddd;
+      flex: 1;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
 
+    .attachment-name-input {
+      flex: 1;
+      background: #1a1a1a;
+      border: 1px solid #4a90d9;
+      color: #ddd;
+      font-size: 12px;
+      padding: 2px 4px;
+      border-radius: 4px;
+      outline: none;
+    }
+
     .attachment-badge {
-      position: absolute;
-      top: 4px;
-      right: 4px;
       background: #4a90d9;
       color: white;
       font-size: 9px;
-      padding: 2px 4px;
+      padding: 2px 6px;
       border-radius: 4px;
+      margin-left: 8px;
+      flex-shrink: 0;
     }
 
     .add-attachment-btn {
@@ -2027,23 +2015,19 @@
       }
 
       listEl.innerHTML = '';
-      listEl.style.display = 'grid';
-      listEl.style.gridTemplateColumns = 'repeat(2, 1fr)';
-      listEl.style.gap = '8px';
+      listEl.style.display = 'flex';
+      listEl.style.flexDirection = 'column';
+      listEl.style.gap = '4px';
 
       for (const assetId of attachments) {
-        const thumbUrl = await window.whiteboardAPI.getAssetThumbnail(assetId);
         const isThumb = item.thumbnailAssetId === assetId;
         
         const el = document.createElement('div');
         el.className = 'attachment-item' + (isThumb ? ' is-thumb' : '');
         el.dataset.assetId = assetId;
         el.innerHTML = `
-          <div class="attachment-preview">
-            ${thumbUrl ? `<img src="${thumbUrl}" alt="">` : '<div class="attachment-icon">📄</div>'}
-          </div>
-          <div class="attachment-name">${assetId}</div>
-          ${isThumb ? '<div class="attachment-badge">封面</div>' : ''}
+          <span class="attachment-name-text">${assetId}</span>
+          ${isThumb ? '<span class="attachment-badge">封面</span>' : ''}
         `;
 
         el.addEventListener('click', () => {
@@ -2051,13 +2035,44 @@
           el.classList.add('selected');
         });
 
-        el.addEventListener('dblclick', async () => {
-          if (isThumb) return;
-          item.thumbnailAssetId = assetId;
-          await window.whiteboardAPI.setCardThumbnailAsset(item.id, assetId);
-          scheduleSave();
-          renderPropPanel(item.id);
-          refreshWhiteboardItem(item);
+        const nameSpan = el.querySelector('.attachment-name-text');
+        nameSpan.addEventListener('dblclick', (e) => {
+          e.stopPropagation();
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.value = assetId;
+          input.className = 'attachment-name-input';
+          nameSpan.replaceWith(input);
+          input.focus();
+          input.select();
+          
+          const finishEdit = async () => {
+            const newName = input.value.trim();
+            if (newName && newName !== assetId) {
+              const result = await window.whiteboardAPI.renameAttachment(item.id, assetId, newName);
+              if (result && result.success) {
+                const idx = item.attachments.indexOf(assetId);
+                if (idx >= 0) {
+                  item.attachments[idx] = newName;
+                  if (item.thumbnailAssetId === assetId) {
+                    item.thumbnailAssetId = newName;
+                  }
+                }
+                scheduleSave();
+              }
+            }
+            renderPropPanel(item.id);
+            refreshWhiteboardItem(item);
+          };
+          
+          input.addEventListener('blur', finishEdit);
+          input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+              input.blur();
+            } else if (e.key === 'Escape') {
+              renderPropPanel(item.id);
+            }
+          });
         });
 
         listEl.appendChild(el);
@@ -2066,7 +2081,7 @@
       document.addEventListener('keydown', async (e) => {
         if (e.key === 'Delete' || e.key === 'Backspace') {
           const selected = document.querySelector('.attachment-item.selected');
-          if (selected && document.activeElement === document.body) {
+          if (selected && document.activeElement.tagName !== 'INPUT') {
             const assetId = selected.dataset.assetId;
             await window.whiteboardAPI.detachAssetFromCard(item.id, assetId);
             item.attachments = item.attachments.filter(a => a !== assetId);

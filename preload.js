@@ -50,5 +50,6 @@ contextBridge.exposeInMainWorld('whiteboardAPI', {
   deleteAsset: (assetId) => ipcRenderer.invoke('delete-asset', assetId),
   getAttachmentThumbnails: (assetIds) => ipcRenderer.invoke('get-attachment-thumbnails', assetIds),
   openFolder: (assetId) => ipcRenderer.invoke('open-folder', assetId),
-  scanAttachments: (cardId) => ipcRenderer.invoke('scan-attachments', cardId)
+  scanAttachments: (cardId) => ipcRenderer.invoke('scan-attachments', cardId),
+  renameAttachment: (cardId, oldName, newName) => ipcRenderer.invoke('rename-attachment', { cardId, oldName, newName })
 });

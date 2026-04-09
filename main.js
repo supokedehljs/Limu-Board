@@ -526,6 +526,21 @@ ipcMain.handle('scan-attachments', async (event, cardId) => {
   }
 });
 
+ipcMain.handle('rename-attachment', async (event, { cardId, oldName, newName }) => {
+  try {
+    const assetsPath = await getAssetsPath();
+    const cardDir = path.join(assetsPath, cardId);
+    const oldPath = path.join(cardDir, oldName);
+    const newPath = path.join(cardDir, newName);
+    
+    await fs.access(oldPath);
+    await fs.rename(oldPath, newPath);
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
 ipcMain.handle('save-file', async (event, { buffer, filename }) => {
   try {
     const libPath = await getActiveLibraryPath();
