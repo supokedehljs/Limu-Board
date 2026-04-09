@@ -1094,6 +1094,17 @@
       background: rgba(74, 144, 217, 0.1);
     }
 
+    .attachment-buttons {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .attachment-buttons .add-attachment-btn {
+      flex: 1;
+      width: auto;
+    }
+
     .prop-no-selection {
       color: #777;
       font-size: 12px;
@@ -1923,7 +1934,10 @@
         <div class="prop-section">
           <div class="prop-section-title">附件 <span id="attachmentCount"></span></div>
           ${attachmentsHtml}
-          <button class="add-attachment-btn" id="addAttachmentBtn">+ 添加附件</button>
+          <div class="attachment-buttons">
+            <button class="add-attachment-btn" id="openFolderBtn">📂 打开文件夹</button>
+            <button class="add-attachment-btn" id="refreshAttachmentsBtn">🔄 刷新附件</button>
+          </div>
           <input type="file" id="attachmentFileInput" style="display:none;" multiple>
         </div>
         <div class="prop-section">
@@ -1995,6 +2009,27 @@
             }
             scheduleSave();
             renderPropPanel(item.id);
+            refreshWhiteboardItem(item);
+          }
+        });
+      }
+
+      const openFolderBtn = document.getElementById('openFolderBtn');
+      if (openFolderBtn) {
+        openFolderBtn.addEventListener('click', async () => {
+          await window.whiteboardAPI.openFolder(item.assetId);
+        });
+      }
+
+      const refreshAttachmentsBtn = document.getElementById('refreshAttachmentsBtn');
+      if (refreshAttachmentsBtn) {
+        refreshAttachmentsBtn.addEventListener('click', async () => {
+          const result = await window.whiteboardAPI.scanAttachments(item.assetId);
+          if (result && result.success) {
+            item.attachments = result.attachments;
+            item.thumbnailAssetId = result.thumbnailAssetId || item.attachments[0];
+            scheduleSave();
+            await renderAttachmentsList(item);
             refreshWhiteboardItem(item);
           }
         });

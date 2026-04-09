@@ -48,5 +48,7 @@ contextBridge.exposeInMainWorld('whiteboardAPI', {
   detachAssetFromCard: (cardId, assetId) => ipcRenderer.invoke('detach-asset-from-card', { cardId, assetId }),
   setCardThumbnailAsset: (cardId, thumbnailAssetId) => ipcRenderer.invoke('set-card-thumbnail-asset', { cardId, thumbnailAssetId }),
   deleteAsset: (assetId) => ipcRenderer.invoke('delete-asset', assetId),
-  getAttachmentThumbnails: (assetIds) => ipcRenderer.invoke('get-attachment-thumbnails', assetIds)
+  getAttachmentThumbnails: (assetIds) => ipcRenderer.invoke('get-attachment-thumbnails', assetIds),
+  openFolder: (assetId) => ipcRenderer.invoke('open-folder', assetId),
+  scanAttachments: (cardId) => ipcRenderer.invoke('scan-attachments', cardId)
 });

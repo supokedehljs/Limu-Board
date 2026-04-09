@@ -457,8 +457,118 @@ ipcMain.handle('get-asset-thumbnail', async (event, assetId) => {
     const mime = mimeMap[ext] || 'application/octet-stream';
     return `data:${mime};base64,${buffer.toString('base64')}`;
   } catch (err) {
-    console.error('get-asset-thumbnail error:', err);
     return null;
+  }
+});
+
+ipcMain.handle('open-folder', async (event, assetId) => {
+  try {
+    const assetsPath = await getAssetsPath();
+    const cardDir = path.join(assetsPath, assetId);
+    try {
+      await fs.access(cardDir);
+      require('electron').shell.openPath(cardDir);
+      return { success: true };
+    } catch {
+      const entries = await fs.readdir(assetsPath);
+      for (const entry of entries) {
+        const attachmentPath = path.join(assetsPath, entry, assetId);
+        try {
+          await fs.access(attachmentPath);
+          const cardFolder = path.dirname(attachmentPath);
+          require('electron').shell.openPath(cardFolder);
+          return { success: true };
+        } catch {}
+      }
+      return { success: false, error: 'Folder not found' };
+    }
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('scan-attachments', async (event, cardId) => {
+  try {
+    const assetsPath = await getAssetsPath();
+    const cardDir = path.join(assetsPath, cardId);
+    
+    let attachments = [];
+    let thumbnailAssetId = null;
+    
+    try {
+      await fs.access(cardDir);
+      const files = await fs.readdir(cardDir);
+      
+      const metadataPath = path.join(cardDir, 'metadata.json');
+      let metadata = null;
+      try {
+        const data = await fs.readFile(metadataPath, 'utf-8');
+        metadata = JSON.parse(data);
+      } catch {}
+      
+      for (const file of files) {
+        if (file === 'metadata.json') continue;
+        const filePath = path.join(cardDir, file);
+        const stat = await fs.stat(filePath);
+        if (stat.isFile()) {
+          let assetId = null;
+          if (file === 'original.png' || file === 'original.jpg' || file === 'original.jpeg') {
+            if (metadata && metadata.assetId) {
+              assetId = metadata.assetId;
+              if (!thumbnailAssetId) thumbnailAssetId = assetId;
+            }
+          } else {
+            const match = file.match(/^(original(?:_\d+)?)\./);
+            if (match && metadata && metadata.attachments) {
+              const idx = metadata.attachments.findIndex(a => {
+                const metaPath = path.join(cardDir, a);
+                try {
+                  const m = fs.readFileSync(path.join(metaPath, 'metadata.json'), 'utf-8');
+                  return JSON.parse(m).originalName?.includes(match[1]);
+                } catch { return false; }
+              });
+              if (idx >= 0) assetId = metadata.attachments[idx];
+            }
+          }
+          if (!assetId) {
+            if (metadata && metadata.attachments) {
+              for (const attId of metadata.attachments) {
+                const attDir = path.join(cardDir, attId);
+                try {
+                  const attMeta = JSON.parse(await fs.readFile(path.join(attDir, 'metadata.json'), 'utf-8'));
+                  if (attMeta.originalName === file) {
+                    assetId = attId;
+                    if (!thumbnailAssetId) thumbnailAssetId = assetId;
+                    break;
+                  }
+                } catch {}
+              }
+            }
+          }
+          if (!assetId) {
+            const existingMeta = metadata?.attachments?.find(attId => {
+              const attDir = path.join(cardDir, attId);
+              return fs.existsSync(attDir);
+            });
+            if (existingMeta) assetId = existingMeta;
+          }
+          if (assetId && !attachments.includes(assetId)) {
+            attachments.push(assetId);
+          }
+        }
+      }
+      
+      if (attachments.length === 0 && metadata && metadata.attachments) {
+        attachments = metadata.attachments;
+        thumbnailAssetId = metadata.thumbnailAssetId || metadata.attachments[0];
+      }
+      
+      return { success: true, attachments, thumbnailAssetId };
+    } catch {
+      return { success: false, error: 'Card folder not found' };
+    }
+  } catch (err) {
+    return { success: false, error: err.message };
   }
 });
 
