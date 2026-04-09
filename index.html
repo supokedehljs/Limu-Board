@@ -2026,9 +2026,16 @@
           const result = await window.whiteboardAPI.scanAttachments(item.assetId);
           if (result && result.success) {
             item.attachments = result.attachments;
-            item.thumbnailAssetId = result.thumbnailAssetId || item.attachments[0];
+            
+            const imageExts = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'];
+            const imageFiles = item.attachments.filter(a => {
+              const ext = a.split('.').pop().toLowerCase();
+              return imageExts.includes(ext);
+            });
+            item.thumbnailAssetId = result.thumbnailAssetId || (imageFiles.length > 0 ? imageFiles[0] : null);
+            
             scheduleSave();
-            await renderAttachmentsList(item);
+            renderImageGallery(item);
             refreshWhiteboardItem(item);
           }
         });
@@ -2093,8 +2100,15 @@
             const filePath = assetId;
             const result = await window.whiteboardAPI.deleteAttachmentFile(item.id, filePath);
             item.attachments = item.attachments.filter(a => a !== assetId);
+            
+            const imageExts = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'];
+            const remainingImages = item.attachments.filter(a => {
+              const ext = a.split('.').pop().toLowerCase();
+              return imageExts.includes(ext);
+            });
+            
             if (item.thumbnailAssetId === assetId) {
-              item.thumbnailAssetId = item.attachments.length > 0 ? item.attachments[0] : null;
+              item.thumbnailAssetId = remainingImages.length > 0 ? remainingImages[0] : null;
             }
             scheduleSave();
             renderPropPanel(item.id);
