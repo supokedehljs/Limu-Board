@@ -3284,6 +3284,82 @@
       return container;
     }
 
+    function createFileContainer(id, item) {
+      const container = document.createElement('div');
+      container.className = 'file-item';
+      container.dataset.id = item.id;
+      container.dataset.assetId = item.assetId || item.id;
+      container.dataset.itemId = item.id;
+      container.style.zIndex = zIndex++;
+      container.style.display = 'flex';
+      container.style.flexDirection = 'column';
+      container.style.alignItems = 'center';
+      container.style.justifyContent = 'center';
+      container.style.background = '#2d2d2d';
+      container.style.borderRadius = '8px';
+      container.style.boxShadow = '0 2px 8px rgba(0,0,0,0.4)';
+      container.style.overflow = 'hidden';
+      container.style.width = item.width > 0 ? item.width + 'px' : '150px';
+      container.style.height = item.height > 0 ? item.height + 'px' : '120px';
+
+      const iconArea = document.createElement('div');
+      iconArea.style.cssText = 'flex:1;display:flex;align-items:center;justify-content:center;padding:12px;';
+      
+      const icon = document.createElement('div');
+      icon.style.cssText = 'width:48px;height:48px;display:flex;align-items:center;justify-content:center;font-size:32px;';
+      icon.textContent = '\u{1F4C4}';
+      iconArea.appendChild(icon);
+      container.appendChild(iconArea);
+
+      const nameArea = document.createElement('div');
+      nameArea.style.cssText = 'padding:6px 8px;background:rgba(0,0,0,0.3);width:100%;text-align:center;';
+      const ext = (item.originalName || '').split('.').pop().toUpperCase();
+      nameArea.textContent = ext || 'FILE';
+      nameArea.style.cssText += 'color:#fff;font-size:10px;font-weight:500;';
+      container.appendChild(nameArea);
+
+      container.addEventListener('mousedown', onMouseDown);
+      container.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        selectItem(container);
+        window.whiteboardAPI.showCardContextMenu({
+          id: item.id,
+          assetId: item.assetId || item.id,
+          originalName: item.originalName || '',
+          itemType: 'file'
+        });
+      });
+
+      container.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        e.dataTransfer.dropEffect = 'copy';
+      });
+
+      container.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const files = e.dataTransfer.files;
+        if (files && files.length > 0) {
+          for (const file of files) {
+            const arrayBuffer = await file.arrayBuffer();
+            const buffer = new Uint8Array(arrayBuffer);
+            const assetResult = await window.whiteboardAPI.addAsset(Array.from(buffer), file.name, item.assetId);
+            await window.whiteboardAPI.attachAssetToCard(item.assetId, assetResult.assetId);
+            item.attachments.push(assetResult.assetId);
+            if (!item.thumbnailAssetId) {
+              item.thumbnailAssetId = assetResult.assetId;
+              updateCardContent(item, iconArea);
+            }
+          }
+          scheduleSave();
+        }
+      });
+
+      return container;
+    }
+
     function createCardContainer(id, item) {
       const container = document.createElement('div');
       container.className = 'card-item';
