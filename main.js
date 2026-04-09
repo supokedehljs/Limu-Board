@@ -696,20 +696,7 @@ ipcMain.handle('delete-item-state', async (event, assetId) => {
     const assetsPath = path.join(libPath, 'assets');
     const trashPath = path.join(libPath, '.trash');
     let assetDir = path.join(assetsPath, assetId);
-    
-    try {
-      await fs.access(assetDir);
-    } catch {
-      const entries = await fs.readdir(assetsPath);
-      for (const entry of entries) {
-        const attachmentPath = path.join(assetsPath, entry, assetId);
-        try {
-          await fs.access(attachmentPath);
-          assetDir = attachmentPath;
-          break;
-        } catch {}
-      }
-    }
+    let movedToTrash = false;
     
     try {
       await fs.access(assetDir);
@@ -722,8 +709,28 @@ ipcMain.handle('delete-item-state', async (event, assetId) => {
         counter++;
       }
       await fs.rename(assetDir, trashItemPath);
-    } catch {}
-
+      movedToTrash = true;
+    } catch {
+      const entries = await fs.readdir(assetsPath);
+      for (const entry of entries) {
+        const attachmentPath = path.join(assetsPath, entry, assetId);
+        try {
+          await fs.access(attachmentPath);
+          assetDir = attachmentPath;
+          await fs.mkdir(trashPath, { recursive: true });
+          let trashItemPath = path.join(trashPath, assetId);
+          let counter = 1;
+          while (await fs.access(trashItemPath).then(() => true).catch(() => false)) {
+            trashItemPath = path.join(trashPath, `${assetId}_${counter}`);
+            counter++;
+          }
+          await fs.rename(assetDir, trashItemPath);
+          movedToTrash = true;
+          break;
+        } catch {}
+      }
+    }
+    
     await removeFromCatalog(libPath, assetId);
     
     let catalog = { cards: [], trash: [] };
@@ -733,7 +740,7 @@ ipcMain.handle('delete-item-state', async (event, assetId) => {
       catalog = JSON.parse(catalogData);
     } catch {}
     if (!catalog.trash) catalog.trash = [];
-    if (!catalog.trash.includes(assetId)) {
+    if (movedToTrash && !catalog.trash.includes(assetId)) {
       catalog.trash.push(assetId);
     }
     catalog.cards = catalog.cards.filter(id => id !== assetId);

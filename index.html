@@ -1526,6 +1526,7 @@
         <h4>已添加的库</h4>
         <div id="libraryList"></div>
         <button class="add-lib-btn" onclick="addLibrary()">+ 添加素材库</button>
+        <button class="add-lib-btn" onclick="reloadLibrary()" style="margin-top:6px;">🔄 刷新当前库</button>
         <button class="add-lib-btn" onclick="createLibrary()" style="margin-top:6px;">+ 新建素材库</button>
       </div>
     </div>
@@ -2375,6 +2376,11 @@
       if (!confirm('确定要移除此素材库吗？（不会删除文件）')) return;
       await window.whiteboardAPI.removeLibrary(libId);
       await loadLibraryList();
+    }
+
+    async function reloadLibrary() {
+      await loadState();
+      renderTodoList();
     }
 
     let appSettingsOpen = false;
