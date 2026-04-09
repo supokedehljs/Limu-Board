@@ -17,18 +17,6 @@ function getDataPath() {
   return dataPath;
 }
 
-async function getActiveLibraryPath() {
-  const config = await getLibrariesConfig();
-  if (config.activeId && config.libraries.length > 0) {
-    const lib = config.libraries.find(l => l.id === config.activeId);
-    if (lib) {
-      activeLibraryPath = lib.path;
-      return activeLibraryPath;
-    }
-  }
-  return null;
-}
-
 async function hasActiveLibrary() {
   const libPath = await getActiveLibraryPath();
   return libPath !== null;
@@ -322,20 +310,7 @@ ipcMain.handle('add-asset', async (event, { buffer, filename, cardId }) => {
       finalPath = path.join(assetDir, savedName);
       counter++;
     }
-    
-    // 确保 buffer 是正确的格式
-    let fileBuffer;
-    if (Array.isArray(buffer)) {
-      fileBuffer = Buffer.from(buffer);
-    } else if (Buffer.isBuffer(buffer)) {
-      fileBuffer = buffer;
-    } else if (buffer && typeof buffer === 'object' && 'data' in buffer) {
-      // 处理 Electron 序列化后的 TypedArray
-      fileBuffer = Buffer.from(buffer.data);
-    } else {
-      throw new Error('Invalid buffer format');
-    }
-    await fs.writeFile(finalPath, fileBuffer);
+    await fs.writeFile(finalPath, Buffer.from(buffer));
 
     let width = 0, height = 0;
     const imageExts = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'];
