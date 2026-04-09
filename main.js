@@ -37,7 +37,7 @@ async function saveLibrariesConfig(config) {
   const dataPath = getDataPath();
   await fs.mkdir(dataPath, { recursive: true });
   const configPath = path.join(dataPath, 'libraries.json');
-  await fs.writeFile(configPath, JSON.stringify(config, null, 2));
+  await atomicWriteFile(configPath, JSON.stringify(config, null, 2));
 }
 
 async function loadSettings() {
@@ -600,49 +600,64 @@ ipcMain.handle('save-file', async (event, { buffer, filename }) => {
   }
 });
 
+let _cachedLibraryPath = null;
+
+async function atomicWriteFile(filePath, data) {
+  const tmp = filePath + '.tmp';
+  await fs.writeFile(tmp, data, 'utf-8');
+  await fs.rename(tmp, filePath);
+}
+
+async function getActiveLibraryPath() {
+  if (_cachedLibraryPath !== null) return _cachedLibraryPath;
+  const config = await getLibrariesConfig();
+  if (config.activeId && config.libraries.length > 0) {
+    const lib = config.libraries.find(l => l.id === config.activeId);
+    _cachedLibraryPath = lib ? lib.path : null;
+  } else {
+    _cachedLibraryPath = null;
+  }
+  return _cachedLibraryPath;
+}
+
 ipcMain.handle('read-state', async () => {
   try {
     const libPath = await getActiveLibraryPath();
-    if (!libPath) {
-      return { version: 1, zoom: 1, panX: 0, panY: 0, items: [] };
-    }
-    
+    if (!libPath) return { version: 1, zoom: 1, panX: 0, panY: 0, items: [] };
+
     const assetsPath = path.join(libPath, 'assets');
     await fs.mkdir(assetsPath, { recursive: true });
-    
-    const trashPath = path.join(libPath, '.trash');
-    
+
+    let catalog = { cards: [], trash: [] };
+    const catalogPath = path.join(libPath, 'card-catalog.json');
+    try {
+      const data = await fs.readFile(catalogPath, 'utf-8');
+      catalog = JSON.parse(data);
+    } catch {
+      catalog = { cards: [], trash: [] };
+    }
+    if (!catalog.trash) catalog.trash = [];
+    const trashSet = new Set(catalog.trash);
+
     const entries = await fs.readdir(assetsPath);
     const items = [];
-    
+
     for (const entry of entries) {
+      if (trashSet.has(entry)) continue;
       const metadataPath = path.join(assetsPath, entry, 'metadata.json');
       try {
         const metadataData = await fs.readFile(metadataPath, 'utf-8');
         const metadata = JSON.parse(metadataData);
-        if (metadata.type === 'tag') {
-          await fs.rm(path.join(assetsPath, entry), { recursive: true, force: true });
-          continue;
-        }
+        if (metadata.type === 'tag') continue;
         items.push(metadata);
       } catch {}
     }
-    
-    let catalog = { cards: [], trash: [] };
-    const catalogPath = path.join(libPath, 'card-catalog.json');
-    try {
-      const catalogData = await fs.readFile(catalogPath, 'utf-8');
-      catalog = JSON.parse(catalogData);
-    } catch {
-      catalog = { cards: items.map(i => i.assetId), trash: [] };
-      await fs.writeFile(catalogPath, JSON.stringify(catalog, null, 2));
-    }
-    
-    const currentCardIds = items.map(i => i.assetId);
-    const missingFromCatalog = currentCardIds.filter(id => !catalog.cards.includes(id));
-    if (missingFromCatalog.length > 0) {
-      catalog.cards = [...catalog.cards, ...missingFromCatalog];
-      await fs.writeFile(catalogPath, JSON.stringify(catalog, null, 2));
+
+    const currentIds = new Set(items.map(i => i.assetId));
+    const missing = [...currentIds].filter(id => !catalog.cards.includes(id) && !trashSet.has(id));
+    if (missing.length > 0) {
+      catalog.cards = [...catalog.cards, ...missing];
+      await atomicWriteFile(catalogPath, JSON.stringify(catalog, null, 2));
     }
     
     return { version: 1, zoom: 1, panX: 0, panY: 0, items };
@@ -656,17 +671,17 @@ ipcMain.handle('write-state', async (event, state) => {
     const libPath = await getActiveLibraryPath();
     if (!libPath) return;
     
+    const catalog = await getCatalog(libPath);
+    const trashSet = new Set(catalog.trash || []);
     const assetsPath = path.join(libPath, 'assets');
     await fs.mkdir(assetsPath, { recursive: true });
     
     if (state.items && Array.isArray(state.items)) {
       for (const item of state.items) {
-        const metadataPath = path.join(assetsPath, item.assetId || item.id, 'metadata.json');
-        try {
-          await fs.access(path.dirname(metadataPath));
-        } catch {
-          await fs.mkdir(path.dirname(metadataPath), { recursive: true });
-        }
+        const id = item.assetId || item.id;
+        if (trashSet.has(id)) continue;
+        const metadataPath = path.join(assetsPath, id, 'metadata.json');
+        await fs.mkdir(path.dirname(metadataPath), { recursive: true });
         await fs.writeFile(metadataPath, JSON.stringify(item, null, 2));
       }
     }
@@ -744,7 +759,7 @@ ipcMain.handle('delete-item-state', async (event, assetId) => {
       catalog.trash.push(assetId);
     }
     catalog.cards = catalog.cards.filter(id => id !== assetId);
-    await fs.writeFile(catalogPath, JSON.stringify(catalog, null, 2));
+    await atomicWriteFile(catalogPath, JSON.stringify(catalog, null, 2));
   } catch (err) {
     console.error('delete-item-state error:', err);
   }
@@ -762,7 +777,7 @@ async function getCatalog(libPath) {
 
 async function saveCatalog(libPath, catalog) {
   const catalogPath = path.join(libPath, 'card-catalog.json');
-  await fs.writeFile(catalogPath, JSON.stringify(catalog, null, 2));
+  await atomicWriteFile(catalogPath, JSON.stringify(catalog, null, 2));
 }
 
 async function addToCatalog(libPath, assetId) {
@@ -981,6 +996,7 @@ ipcMain.handle('get-libraries', async () => {
 });
 
 ipcMain.handle('set-active-library', async (event, libId) => {
+  _cachedLibraryPath = null;
   const config = await getLibrariesConfig();
   const lib = config.libraries.find(l => l.id === libId);
   if (!lib) return false;
@@ -993,6 +1009,7 @@ ipcMain.handle('set-active-library', async (event, libId) => {
 });
 
 ipcMain.handle('remove-library', async (event, libId) => {
+  _cachedLibraryPath = null;
   const config = await getLibrariesConfig();
   config.libraries = config.libraries.filter(l => l.id !== libId);
   if (config.activeId === libId) {
