@@ -446,8 +446,8 @@ ipcMain.handle('get-asset-thumbnail', async (event, assetId) => {
     const resized = resizeImageToMax(buffer, 512);
     if (resized) {
       const resizedBuffer = resized.toPNG();
-      const mime = `data:image/png;base64,${resizedBuffer.toString('base64')}`;
-      return mime;
+      const dataUrl = `data:image/png;base64,${resizedBuffer.toString('base64')}`;
+      return dataUrl;
     }
 
     const mimeMap = {
@@ -464,8 +464,10 @@ ipcMain.handle('get-asset-thumbnail', async (event, assetId) => {
 
 ipcMain.handle('save-file', async (event, { buffer, filename }) => {
   try {
-    await ensureDataDir();
-    const filesDir = path.join(getDataPath(), 'files');
+    const libPath = await getActiveLibraryPath();
+    if (!libPath) throw new Error('No active library');
+    const filesDir = path.join(libPath, 'files');
+    await fs.mkdir(filesDir, { recursive: true });
     const ext = path.extname(filename);
     const id = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
     const savedName = `item_${id}${ext}`;
@@ -1119,7 +1121,8 @@ async function getAssetThumbnail(assetId) {
     const resized = resizeImageToMax(buffer, 512);
     if (resized) {
       const resizedBuffer = resized.toPNG();
-      return `data:image/png;base64,${resizedBuffer.toString('base64')}`;
+      const dataUrl = `data:image/png;base64,${resizedBuffer.toString('base64')}`;
+      return dataUrl;
     }
 
     const mimeMap = {
