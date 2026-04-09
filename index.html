@@ -2040,10 +2040,10 @@
       if (!galleryEl || !item) return;
 
       const attachments = item.attachments || [];
-      const imageExts = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'];
+      const imageExts = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'];
       const imageFiles = attachments.filter(a => {
-        const ext = '.' + a.split('.').pop();
-        return imageExts.includes(ext.toLowerCase());
+        const ext = a.split('.').pop().toLowerCase();
+        return imageExts.includes(ext);
       });
 
       if (countEl) countEl.textContent = `(${imageFiles.length})`;
@@ -2199,10 +2199,10 @@
     }
 
     async function updateCardContent(item, contentArea) {
-      const imageExts = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'];
+      const imageExts = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'];
       const imageAttachments = (item.attachments || []).filter(a => {
-        const ext = '.' + a.split('.').pop();
-        return imageExts.includes(ext.toLowerCase());
+        const ext = a.split('.').pop().toLowerCase();
+        return imageExts.includes(ext);
       });
       
       const thumbAssetId = item.thumbnailAssetId || imageAttachments[0];
