@@ -675,6 +675,7 @@ ipcMain.handle('delete-item-state', async (event, assetId) => {
     const libPath = await getActiveLibraryPath();
     if (!libPath) return;
     const assetsPath = path.join(libPath, 'assets');
+    const trashPath = path.join(libPath, '.trash');
     let assetDir = path.join(assetsPath, assetId);
     
     try {
@@ -692,12 +693,51 @@ ipcMain.handle('delete-item-state', async (event, assetId) => {
     }
     
     try {
-      await fs.rm(assetDir, { recursive: true, force: true });
+      await fs.access(assetDir);
+      await fs.mkdir(trashPath, { recursive: true });
+      const trashItemPath = path.join(trashPath, assetId);
+      let counter = 1;
+      while (await fs.access(trashItemPath).then(() => true).catch(() => false)) {
+        await fs.rename(trashItemPath, path.join(trashPath, `${assetId}_${counter}`));
+        counter++;
+      }
+      await fs.rename(assetDir, trashItemPath);
     } catch {}
+
+    await removeFromCatalog(libPath, assetId);
   } catch (err) {
     console.error('delete-item-state error:', err);
   }
 });
+
+async function getCatalog(libPath) {
+  const catalogPath = path.join(libPath, 'card-catalog.json');
+  try {
+    const data = await fs.readFile(catalogPath, 'utf-8');
+    return JSON.parse(data);
+  } catch {
+    return { cards: [] };
+  }
+}
+
+async function saveCatalog(libPath, catalog) {
+  const catalogPath = path.join(libPath, 'card-catalog.json');
+  await fs.writeFile(catalogPath, JSON.stringify(catalog, null, 2));
+}
+
+async function addToCatalog(libPath, assetId) {
+  const catalog = await getCatalog(libPath);
+  if (!catalog.cards.includes(assetId)) {
+    catalog.cards.push(assetId);
+    await saveCatalog(libPath, catalog);
+  }
+}
+
+async function removeFromCatalog(libPath, assetId) {
+  const catalog = await getCatalog(libPath);
+  catalog.cards = catalog.cards.filter(id => id !== assetId);
+  await saveCatalog(libPath, catalog);
+}
 
 ipcMain.handle('open-file', async (event, assetId) => {
     try {
@@ -1131,6 +1171,7 @@ ipcMain.handle('create-empty-card', async (event, { cardName }) => {
     };
 
     await fs.writeFile(path.join(assetDir, 'metadata.json'), JSON.stringify(newItem, null, 2));
+    await addToCatalog(libPath, assetId);
     return { assetId, item: newItem };
   } catch (err) {
     console.error('create-empty-card error:', err);
