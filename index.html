@@ -989,14 +989,15 @@
 
     .attachment-item {
       display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 8px;
-      padding: 6px;
+      padding: 8px;
       background: #2a2a2a;
-      border-radius: 6px;
-      border: 1px solid transparent;
+      border-radius: 8px;
+      border: 2px solid transparent;
       cursor: pointer;
       transition: all 0.15s;
+      position: relative;
     }
 
     .attachment-item:hover {
@@ -1007,73 +1008,49 @@
       border-color: #4a90d9;
     }
 
-    .attachment-thumb {
-      width: 36px;
-      height: 36px;
-      border-radius: 4px;
+    .attachment-item.selected {
+      border-color: #e53935;
+      background: #3a3a3a;
+    }
+
+    .attachment-preview {
+      width: 80px;
+      height: 80px;
+      border-radius: 6px;
       overflow: hidden;
       background: #1a1a1a;
       display: flex;
       align-items: center;
       justify-content: center;
+      margin-bottom: 6px;
     }
 
-    .attachment-thumb img {
+    .attachment-preview img {
       max-width: 100%;
       max-height: 100%;
       object-fit: contain;
     }
 
-    .attachment-icon {
-      font-size: 20px;
-    }
-
-    .attachment-info {
-      flex: 1;
-      min-width: 0;
-    }
-
     .attachment-name {
       font-size: 10px;
-      color: #999;
-      white-space: nowrap;
+      color: #888;
+      text-align: center;
+      word-break: break-all;
+      max-width: 100%;
       overflow: hidden;
       text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .attachment-badge {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      background: #4a90d9;
+      color: white;
       font-size: 9px;
-      color: #4a90d9;
-      margin-top: 2px;
-    }
-
-    .attachment-actions {
-      display: flex;
-      gap: 4px;
-    }
-
-    .attachment-action-btn {
-      width: 24px;
-      height: 24px;
-      border: none;
-      background: #3a3a3a;
+      padding: 2px 4px;
       border-radius: 4px;
-      cursor: pointer;
-      font-size: 11px;
-      color: #888;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.15s;
-    }
-
-    .attachment-action-btn:hover {
-      background: #4a4a4a;
-      color: #fff;
-    }
-
-    .attachment-action-btn.delete-btn:hover {
-      background: #e53935;
     }
 
     .add-attachment-btn {
@@ -2050,28 +2027,32 @@
       }
 
       listEl.innerHTML = '';
+      listEl.style.display = 'grid';
+      listEl.style.gridTemplateColumns = 'repeat(2, 1fr)';
+      listEl.style.gap = '8px';
+
       for (const assetId of attachments) {
         const thumbUrl = await window.whiteboardAPI.getAssetThumbnail(assetId);
         const isThumb = item.thumbnailAssetId === assetId;
         
         const el = document.createElement('div');
         el.className = 'attachment-item' + (isThumb ? ' is-thumb' : '');
+        el.dataset.assetId = assetId;
         el.innerHTML = `
-          <div class="attachment-thumb">
+          <div class="attachment-preview">
             ${thumbUrl ? `<img src="${thumbUrl}" alt="">` : '<div class="attachment-icon">📄</div>'}
           </div>
-          <div class="attachment-info">
-            <div class="attachment-name">${assetId.substring(0, 12)}...</div>
-            ${isThumb ? '<div class="attachment-badge">封面</div>' : ''}
-          </div>
-          <div class="attachment-actions">
-            <button class="attachment-action-btn set-thumb-btn" title="设为封面">📌</button>
-            <button class="attachment-action-btn delete-btn" title="删除">✕</button>
-          </div>
+          <div class="attachment-name">${assetId}</div>
+          ${isThumb ? '<div class="attachment-badge">封面</div>' : ''}
         `;
 
-        const setThumbBtn = el.querySelector('.set-thumb-btn');
-        setThumbBtn.addEventListener('click', async () => {
+        el.addEventListener('click', () => {
+          document.querySelectorAll('.attachment-item').forEach(e => e.classList.remove('selected'));
+          el.classList.add('selected');
+        });
+
+        el.addEventListener('dblclick', async () => {
+          if (isThumb) return;
           item.thumbnailAssetId = assetId;
           await window.whiteboardAPI.setCardThumbnailAsset(item.id, assetId);
           scheduleSave();
@@ -2079,20 +2060,25 @@
           refreshWhiteboardItem(item);
         });
 
-        const deleteBtn = el.querySelector('.delete-btn');
-        deleteBtn.addEventListener('click', async () => {
-          await window.whiteboardAPI.detachAssetFromCard(item.id, assetId);
-          item.attachments = item.attachments.filter(a => a !== assetId);
-          if (item.thumbnailAssetId === assetId) {
-            item.thumbnailAssetId = item.attachments.length > 0 ? item.attachments[0] : null;
-          }
-          scheduleSave();
-          renderPropPanel(item.id);
-          refreshWhiteboardItem(item);
-        });
-
         listEl.appendChild(el);
       }
+
+      document.addEventListener('keydown', async (e) => {
+        if (e.key === 'Delete' || e.key === 'Backspace') {
+          const selected = document.querySelector('.attachment-item.selected');
+          if (selected && document.activeElement === document.body) {
+            const assetId = selected.dataset.assetId;
+            await window.whiteboardAPI.detachAssetFromCard(item.id, assetId);
+            item.attachments = item.attachments.filter(a => a !== assetId);
+            if (item.thumbnailAssetId === assetId) {
+              item.thumbnailAssetId = item.attachments.length > 0 ? item.attachments[0] : null;
+            }
+            scheduleSave();
+            renderPropPanel(item.id);
+            refreshWhiteboardItem(item);
+          }
+        }
+      });
     }
 
     async function updateCardContent(item, contentArea) {
