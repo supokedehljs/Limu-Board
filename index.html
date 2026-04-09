@@ -827,6 +827,7 @@
       flex: 1;
       overflow-y: auto;
       padding: 12px;
+      overflow-x: hidden;
     }
 
     .prop-section {
@@ -2038,9 +2039,10 @@
         const nameSpan = el.querySelector('.attachment-name-text');
         nameSpan.addEventListener('dblclick', (e) => {
           e.stopPropagation();
+          const currentName = nameSpan.textContent;
           const input = document.createElement('input');
           input.type = 'text';
-          input.value = assetId;
+          input.value = currentName;
           input.className = 'attachment-name-input';
           nameSpan.replaceWith(input);
           input.focus();
@@ -2048,24 +2050,37 @@
           
           const finishEdit = async () => {
             const newName = input.value.trim();
-            if (newName && newName !== assetId) {
-              const result = await window.whiteboardAPI.renameAttachment(item.id, assetId, newName);
+            if (newName && newName !== currentName) {
+              const result = await window.whiteboardAPI.renameAttachment(item.id, currentName, newName);
               if (result && result.success) {
-                const idx = item.attachments.indexOf(assetId);
+                const idx = item.attachments.indexOf(currentName);
                 if (idx >= 0) {
                   item.attachments[idx] = newName;
-                  if (item.thumbnailAssetId === assetId) {
+                  if (item.thumbnailAssetId === currentName) {
                     item.thumbnailAssetId = newName;
                   }
                 }
                 scheduleSave();
               }
             }
-            renderPropPanel(item.id);
-            refreshWhiteboardItem(item);
+            const newSpan = document.createElement('span');
+            newSpan.className = 'attachment-name-text';
+            newSpan.textContent = newName || currentName;
+            input.replaceWith(newSpan);
           };
           
           input.addEventListener('blur', finishEdit);
+          input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+              input.blur();
+            } else if (e.key === 'Escape') {
+              const newSpan = document.createElement('span');
+              newSpan.className = 'attachment-name-text';
+              newSpan.textContent = currentName;
+              input.replaceWith(newSpan);
+            }
+          });
+        });
           input.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
               input.blur();
