@@ -301,14 +301,15 @@ ipcMain.handle('add-asset', async (event, { buffer, filename, cardId }) => {
     await fs.mkdir(assetDir, { recursive: true });
 
     const ext = path.extname(filename).toLowerCase();
-    let savedName = `original${ext}`;
+    const baseName = path.basename(filename, ext);
+    let savedName = filename;
     let finalPath = path.join(assetDir, savedName);
     
-    let counter = 1;
+    let counter = 0;
     while (await fs.access(finalPath).then(() => true).catch(() => false)) {
-      savedName = `original_${counter}${ext}`;
-      finalPath = path.join(assetDir, savedName);
       counter++;
+      savedName = `${baseName}_${counter}${ext}`;
+      finalPath = path.join(assetDir, savedName);
     }
     await fs.writeFile(finalPath, Buffer.from(buffer));
 
