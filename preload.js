@@ -52,5 +52,5 @@ contextBridge.exposeInMainWorld('whiteboardAPI', {
   openFolder: (assetId) => ipcRenderer.invoke('open-folder', assetId),
   scanAttachments: (cardId) => ipcRenderer.invoke('scan-attachments', cardId),
   renameAttachment: (cardId, oldName, newName) => ipcRenderer.invoke('rename-attachment', { cardId, oldName, newName }),
-  onOpenFileManager: (callback) => ipcRenderer.on('open-file-manager', (e, data) => callback(data))
+  deleteAttachmentFile: (cardId, filename) => ipcRenderer.invoke('delete-attachment-file', { cardId, filename })
 });

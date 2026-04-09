@@ -541,6 +541,20 @@ ipcMain.handle('rename-attachment', async (event, { cardId, oldName, newName }) 
   }
 });
 
+ipcMain.handle('delete-attachment-file', async (event, { cardId, filename }) => {
+  try {
+    const assetsPath = await getAssetsPath();
+    const cardDir = path.join(assetsPath, cardId);
+    const filePath = path.join(cardDir, filename);
+    
+    await fs.access(filePath);
+    await fs.unlink(filePath);
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
 ipcMain.handle('save-file', async (event, { buffer, filename }) => {
   try {
     const libPath = await getActiveLibraryPath();
@@ -943,13 +957,6 @@ ipcMain.handle('show-card-context-menu', async (event, { id, assetId, originalNa
         } catch {}
       }
     }));
-  menu.append(new MenuItem({ type: 'separator' }));
-  menu.append(new MenuItem({
-    label: '附件管理',
-    click: () => {
-      event.sender.send('open-file-manager', { itemId: assetId || id });
-    }
-  }));
   menu.append(new MenuItem({ type: 'separator' }));
   menu.append(new MenuItem({
     label: '复制文件名',
