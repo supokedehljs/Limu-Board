@@ -1969,9 +1969,9 @@
               const assetResult = await window.whiteboardAPI.addAsset(Array.from(buffer), file.name, item.assetId);
               await window.whiteboardAPI.attachAssetToCard(item.assetId, assetResult.assetId);
               if (!item.attachments) item.attachments = [];
-              item.attachments.push(assetResult.assetId);
+              item.attachments.push(assetResult.savedName);
               if (!item.thumbnailAssetId) {
-                item.thumbnailAssetId = assetResult.assetId;
+                item.thumbnailAssetId = assetResult.savedName;
               }
             }
             scheduleSave();
@@ -3063,9 +3063,9 @@
         const card = items.find(i => i.id === targetCardId || i.assetId === targetCardId);
         if (card) {
           await window.whiteboardAPI.attachAssetToCard(card.assetId, assetResult.assetId);
-          card.attachments.push(assetResult.assetId);
+          card.attachments.push(assetResult.savedName);
           if (!card.thumbnailAssetId) {
-            card.thumbnailAssetId = assetResult.assetId;
+            card.thumbnailAssetId = assetResult.savedName;
           }
           scheduleSave();
           return;
@@ -3309,9 +3309,9 @@
             const assetResult = await window.whiteboardAPI.addAsset(Array.from(buffer), file.name, item.assetId);
             await window.whiteboardAPI.attachAssetToCard(item.assetId, assetResult.assetId);
             if (!item.attachments) item.attachments = [];
-            item.attachments.push(assetResult.assetId);
+            item.attachments.push(assetResult.savedName);
             if (!item.thumbnailAssetId) {
-              item.thumbnailAssetId = assetResult.assetId;
+              item.thumbnailAssetId = assetResult.savedName;
             }
           }
           scheduleSave();
@@ -3385,9 +3385,9 @@
             const buffer = new Uint8Array(arrayBuffer);
             const assetResult = await window.whiteboardAPI.addAsset(Array.from(buffer), file.name, item.assetId);
             await window.whiteboardAPI.attachAssetToCard(item.assetId, assetResult.assetId);
-            item.attachments.push(assetResult.assetId);
+            item.attachments.push(assetResult.savedName);
             if (!item.thumbnailAssetId) {
-              item.thumbnailAssetId = assetResult.assetId;
+              item.thumbnailAssetId = assetResult.savedName;
               updateCardContent(item, iconArea);
             }
           }
@@ -3512,9 +3512,9 @@
             const buffer = new Uint8Array(arrayBuffer);
             const assetResult = await window.whiteboardAPI.addAsset(Array.from(buffer), file.name, item.assetId);
             await window.whiteboardAPI.attachAssetToCard(item.assetId, assetResult.assetId);
-            item.attachments.push(assetResult.assetId);
+            item.attachments.push(assetResult.savedName);
             if (!item.thumbnailAssetId) {
-              item.thumbnailAssetId = assetResult.assetId;
+              item.thumbnailAssetId = assetResult.savedName;
               updateCardContent(item, contentArea);
             }
           }
@@ -3991,12 +3991,13 @@
                 const assetResult = await window.whiteboardAPI.addAsset(Array.from(buffer), fileData.filename, item.assetId);
                 await window.whiteboardAPI.attachAssetToCard(item.assetId, assetResult.assetId);
                 if (!item.attachments) item.attachments = [];
-                item.attachments.push(assetResult.assetId);
+                item.attachments.push(assetResult.savedName);
                 if (!item.thumbnailAssetId) {
-                  item.thumbnailAssetId = assetResult.assetId;
+                  item.thumbnailAssetId = assetResult.savedName;
                 }
               }
               scheduleSave();
+              renderPropPanel(item.id);
               refreshWhiteboardItem(item);
               return;
             }
@@ -4011,11 +4012,12 @@
               const assetResult = await window.whiteboardAPI.addAsset(Array.from(buffer), clipboardData.filename, item.assetId);
               await window.whiteboardAPI.attachAssetToCard(item.assetId, assetResult.assetId);
               if (!item.attachments) item.attachments = [];
-              item.attachments.push(assetResult.assetId);
+              item.attachments.push(assetResult.savedName);
               if (!item.thumbnailAssetId) {
-                item.thumbnailAssetId = assetResult.assetId;
+                item.thumbnailAssetId = assetResult.savedName;
               }
               scheduleSave();
+              renderPropPanel(item.id);
               refreshWhiteboardItem(item);
               return;
             }
