@@ -4348,6 +4348,15 @@
       await init();
     });
 
+    window.whiteboardAPI.onOpenFileManager((data) => {
+      const item = items.find(i => i.id === data.itemId || i.assetId === data.itemId);
+      if (item) {
+        const el = whiteboard.querySelector(`[data-item-id="${item.id}"]`);
+        if (el) selectItem(el);
+        openFileManager();
+      }
+    });
+
     window.whiteboardAPI.onTimerAction((data) => {
       if (data.type === 'add' || data.type === 'set') {
         showTimerDialog(data.type, data.itemId);

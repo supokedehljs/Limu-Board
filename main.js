@@ -301,15 +301,14 @@ ipcMain.handle('add-asset', async (event, { buffer, filename, cardId }) => {
     await fs.mkdir(assetDir, { recursive: true });
 
     const ext = path.extname(filename).toLowerCase();
-    const baseName = path.basename(filename, ext);
-    let savedName = filename;
+    let savedName = `original${ext}`;
     let finalPath = path.join(assetDir, savedName);
     
-    let counter = 0;
+    let counter = 1;
     while (await fs.access(finalPath).then(() => true).catch(() => false)) {
-      counter++;
-      savedName = `${baseName}_${counter}${ext}`;
+      savedName = `original_${counter}${ext}`;
       finalPath = path.join(assetDir, savedName);
+      counter++;
     }
     await fs.writeFile(finalPath, Buffer.from(buffer));
 
@@ -944,6 +943,13 @@ ipcMain.handle('show-card-context-menu', async (event, { id, assetId, originalNa
         } catch {}
       }
     }));
+  menu.append(new MenuItem({ type: 'separator' }));
+  menu.append(new MenuItem({
+    label: '附件管理',
+    click: () => {
+      event.sender.send('open-file-manager', { itemId: assetId || id });
+    }
+  }));
   menu.append(new MenuItem({ type: 'separator' }));
   menu.append(new MenuItem({
     label: '复制文件名',

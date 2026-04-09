@@ -51,5 +51,6 @@ contextBridge.exposeInMainWorld('whiteboardAPI', {
   getAttachmentThumbnails: (assetIds) => ipcRenderer.invoke('get-attachment-thumbnails', assetIds),
   openFolder: (assetId) => ipcRenderer.invoke('open-folder', assetId),
   scanAttachments: (cardId) => ipcRenderer.invoke('scan-attachments', cardId),
-  renameAttachment: (cardId, oldName, newName) => ipcRenderer.invoke('rename-attachment', { cardId, oldName, newName })
+  renameAttachment: (cardId, oldName, newName) => ipcRenderer.invoke('rename-attachment', { cardId, oldName, newName }),
+  onOpenFileManager: (callback) => ipcRenderer.on('open-file-manager', (e, data) => callback(data))
 });
