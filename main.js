@@ -406,45 +406,39 @@ ipcMain.handle('get-asset', async (event, assetId) => {
 ipcMain.handle('get-asset-thumbnail', async (event, assetId, cardId) => {
   try {
     const assetsPath = await getAssetsPath();
-    let assetDir = path.join(assetsPath, assetId);
+    let assetDir = null;
     let found = false;
     let originalFile = null;
     
-    try {
-      await fs.access(assetDir);
-      found = true;
-      const entries = await fs.readdir(assetDir);
-      originalFile = entries.find(f => f.startsWith('original')) || entries.find(f => {
-        const ext = path.extname(f).toLowerCase();
-        return ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'].includes(ext);
-      });
-    } catch {
-      if (cardId) {
-        const cardDir = path.join(assetsPath, cardId);
-        const cardFilePath = path.join(cardDir, assetId);
+    // First, if we have a cardId, look in the card's folder for the attachment
+    if (cardId) {
+      const cardDir = path.join(assetsPath, cardId);
+      try {
+        await fs.access(cardDir);
+        const attachmentPath = path.join(cardDir, assetId);
         try {
-          await fs.access(cardFilePath);
-          assetDir = cardFilePath;
+          await fs.access(attachmentPath);
+          assetDir = cardDir;
           found = true;
-          const ext = path.extname(assetId).toLowerCase();
-          if (['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'].includes(ext)) {
-            originalFile = assetId;
-          }
         } catch {}
-      }
-      if (!found) {
+      } catch {}
+    }
+    
+    // If not found in card folder, try treating assetId as a folder
+    if (!found) {
+      assetDir = path.join(assetsPath, assetId);
+      try {
+        await fs.access(assetDir);
+        found = true;
+      } catch {
+        // If not a folder, search through all asset folders
         const entries = await fs.readdir(assetsPath);
         for (const entry of entries) {
           const attachmentPath = path.join(assetsPath, entry, assetId);
           try {
             await fs.access(attachmentPath);
-            assetDir = attachmentPath;
+            assetDir = path.join(assetsPath, entry);
             found = true;
-            const entryFiles = await fs.readdir(assetDir);
-            originalFile = entryFiles.find(f => f.startsWith('original')) || entryFiles.find(f => {
-              const ext = path.extname(f).toLowerCase();
-              return ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'].includes(ext);
-            });
             break;
           } catch {}
         }
@@ -452,6 +446,15 @@ ipcMain.handle('get-asset-thumbnail', async (event, assetId, cardId) => {
     }
     
     if (!found) return null;
+
+    // Look for image files in the directory
+    const entries = await fs.readdir(assetDir);
+    originalFile = entries.find(f => {
+      const ext = path.extname(f).toLowerCase();
+      return ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'].includes(ext);
+    }) || entries.find(f => f.startsWith('original'));
+    
+    if (!originalFile) return null;
 
     const thumbnailPath = path.join(assetDir, 'thumbnail.png');
     try {
