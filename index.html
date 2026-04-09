@@ -1419,7 +1419,7 @@
       <button class="window-btn minimize" onclick="window.whiteboardAPI.windowMinimize()" title="最小化">
         <svg viewBox="0 0 10 10"><line x1="0" y1="5" x2="10" y2="5" stroke="currentColor" stroke-width="1"/></svg>
       </button>
-      <button class="window-btn maximize" onclick="window.whiteboardAPI.windowMaximize()" title="最大化">
+      <button class="window-btn maximize" onclick="toggleWindowMaximize()" title="最大化/还原">
         <svg viewBox="0 0 10 10"><rect x="0.5" y1="0.5" width="9" height="9" fill="none" stroke="currentColor" stroke-width="1"/></svg>
       </button>
       <button class="window-btn close" onclick="window.whiteboardAPI.windowHide()" title="隐藏">
@@ -2955,51 +2955,29 @@
       }
     }
 
-     async function testClipboard() {
-       try {
-         const filesData = await window.whiteboardAPI.readClipboardFiles();
-         if (filesData && filesData.length > 0) {
-           for (const fileData of filesData) {
-             try {
-                 const bufferStr = atob(fileData.buffer);
-                 const buffer = Uint8Array.from(bufferStr, c => c.charCodeAt(0));
-                 await addFileFromBuffer(buffer, fileData.filename);
-             } catch (decodeErr) {
-                 console.error('Failed to decode clipboard file data:', decodeErr);
-                 // 如果是二进制数据，尝试直接处理
-                 if (fileData.buffer instanceof ArrayBuffer) {
-                     await addFileFromBuffer(new Uint8Array(fileData.buffer), fileData.filename);
-                 } else {
-                     alert('无法处理剪切板文件数据');
-                 }
-             }
-           }
-           return;
-         }
+    async function testClipboard() {
+      try {
+        const filesData = await window.whiteboardAPI.readClipboardFiles();
+        if (filesData && filesData.length > 0) {
+          for (const fileData of filesData) {
+            const buffer = Uint8Array.from(atob(fileData.buffer), c => c.charCodeAt(0));
+            await addFileFromBuffer(buffer, fileData.filename);
+          }
+          return;
+        }
 
-         const clipboardData = await window.whiteboardAPI.readClipboardImage();
-         if (clipboardData && clipboardData.buffer) {
-           try {
-               const bufferStr = atob(clipboardData.buffer);
-               const buffer = Uint8Array.from(bufferStr, c => c.charCodeAt(0));
-               await addFileFromBuffer(buffer, clipboardData.filename);
-           } catch (decodeErr) {
-               console.error('Failed to decode clipboard image data:', decodeErr);
-               // 如果是二进制数据，尝试直接处理
-               if (clipboardData.buffer instanceof ArrayBuffer) {
-                   await addFileFromBuffer(new Uint8Array(clipboardData.buffer), clipboardData.filename);
-               } else {
-                   alert('无法处理剪切板图片数据');
-               }
-           }
-           return;
-         }
+        const clipboardData = await window.whiteboardAPI.readClipboardImage();
+        if (clipboardData && clipboardData.buffer) {
+          const buffer = Uint8Array.from(atob(clipboardData.buffer), c => c.charCodeAt(0));
+          await addFileFromBuffer(buffer, clipboardData.filename);
+          return;
+        }
 
-         alert('剪贴板为空，请先复制图片或文件');
-       } catch (err) {
-         alert('错误: ' + err.message);
-       }
-     }
+        alert('剪贴板为空，请先复制图片或文件');
+      } catch (err) {
+        alert('错误: ' + err.message);
+      }
+    }
 
     async function addFile() {
       if (!hasLibrary) {
@@ -3886,84 +3864,52 @@
 
       const hasSelection = selectedItem !== null;
 
-         if (hasSelection) {
-           const selectedId = selectedItem.dataset.itemId || selectedItem.dataset.id;
-           const item = items.find(i => i.id === selectedId || i.assetId === selectedId);
-           
-           if (item) {
-             try {
-               const filesData = await window.whiteboardAPI.readClipboardFiles();
-               if (filesData && filesData.length > 0) {
-                 for (const fileData of filesData) {
-                   try {
-                     let buffer;
-                     if (typeof fileData.buffer === 'string') {
-                       const bufferStr = atob(fileData.buffer);
-                       buffer = Uint8Array.from(bufferStr, c => c.charCodeAt(0));
-                     } else if (fileData.buffer instanceof ArrayBuffer) {
-                       buffer = new Uint8Array(fileData.buffer);
-                     } else {
-                       buffer = Uint8Array.from(fileData.buffer);
-                     }
-                     const assetResult = await window.whiteboardAPI.addAsset(Array.from(buffer), fileData.filename, item.assetId);
-                     await window.whiteboardAPI.attachAssetToCard(item.assetId, assetResult.assetId);
-                     if (!item.attachments) item.attachments = [];
-                     item.attachments.push(assetResult.assetId);
-                     if (!item.thumbnailAssetId) {
-                       item.thumbnailAssetId = assetResult.assetId;
-                     }
-                   } catch (decodeErr) {
-                     console.error('Failed to decode clipboard file data:', decodeErr);
-                     alert('无法处理剪切板文件数据: ' + fileData.filename);
-                     continue;
-                   }
-                 }
-                 scheduleSave();
-                 refreshWhiteboardItem(item);
-                 return;
-               }
-             } catch (err) {
-               console.error('readClipboardFiles error:', err);
-             }
- 
-             try {
-               const clipboardData = await window.whiteboardAPI.readClipboardImage();
-               if (clipboardData && clipboardData.buffer) {
-                 try {
-                   let buffer;
-                   if (typeof clipboardData.buffer === 'string') {
-                     const bufferStr = atob(clipboardData.buffer);
-                     buffer = Uint8Array.from(bufferStr, c => c.charCodeAt(0));
-                   } else if (clipboardData.buffer instanceof ArrayBuffer) {
-                     buffer = new Uint8Array(clipboardData.buffer);
-                   } else {
-                     buffer = Uint8Array.from(clipboardData.buffer);
-                   }
-                   const assetResult = await window.whiteboardAPI.addAsset(Array.from(buffer), clipboardData.filename, item.assetId);
-                   await window.whiteboardAPI.attachAssetToCard(item.assetId, assetResult.assetId);
-                   if (!item.attachments) item.attachments = [];
-                   item.attachments.push(assetResult.assetId);
-                   if (!item.thumbnailAssetId) {
-                     item.thumbnailAssetId = assetResult.assetId;
-                   }
-                   const img = contentArea.querySelector('img');
-                   if (img) {
-                     const thumbUrl = await window.whiteboardAPI.getAssetThumbnail(assetResult.assetId);
-                     if (thumbUrl) img.src = thumbUrl;
-                   }
-                 } catch (decodeErr) {
-                   console.error('Failed to decode clipboard image data:', decodeErr);
-                   alert('无法处理剪切板图片数据');
-                 }
-                 scheduleSave();
-                 refreshWhiteboardItem(item);
-                 return;
-               }
-             } catch (err) {
-               console.error('readClipboardImage error:', err);
-             }
-           }
-         }
+      if (hasSelection) {
+        const selectedId = selectedItem.dataset.itemId || selectedItem.dataset.id;
+        const item = items.find(i => i.id === selectedId || i.assetId === selectedId);
+        
+        if (item) {
+          try {
+            const filesData = await window.whiteboardAPI.readClipboardFiles();
+            if (filesData && filesData.length > 0) {
+              for (const fileData of filesData) {
+                const buffer = Uint8Array.from(atob(fileData.buffer), c => c.charCodeAt(0));
+                const assetResult = await window.whiteboardAPI.addAsset(Array.from(buffer), fileData.filename, item.assetId);
+                await window.whiteboardAPI.attachAssetToCard(item.assetId, assetResult.assetId);
+                if (!item.attachments) item.attachments = [];
+                item.attachments.push(assetResult.assetId);
+                if (!item.thumbnailAssetId) {
+                  item.thumbnailAssetId = assetResult.assetId;
+                }
+              }
+              scheduleSave();
+              refreshWhiteboardItem(item);
+              return;
+            }
+          } catch (err) {
+            console.error('readClipboardFiles error:', err);
+          }
+
+          try {
+            const clipboardData = await window.whiteboardAPI.readClipboardImage();
+            if (clipboardData && clipboardData.buffer) {
+              const buffer = Uint8Array.from(atob(clipboardData.buffer), c => c.charCodeAt(0));
+              const assetResult = await window.whiteboardAPI.addAsset(Array.from(buffer), clipboardData.filename, item.assetId);
+              await window.whiteboardAPI.attachAssetToCard(item.assetId, assetResult.assetId);
+              if (!item.attachments) item.attachments = [];
+              item.attachments.push(assetResult.assetId);
+              if (!item.thumbnailAssetId) {
+                item.thumbnailAssetId = assetResult.assetId;
+              }
+              scheduleSave();
+              refreshWhiteboardItem(item);
+              return;
+            }
+          } catch (err) {
+            console.error('readClipboardImage error:', err);
+          }
+        }
+      }
 
       try {
         const filesData = await window.whiteboardAPI.readClipboardFiles();
