@@ -610,6 +610,8 @@ ipcMain.handle('read-state', async () => {
     const assetsPath = path.join(libPath, 'assets');
     await fs.mkdir(assetsPath, { recursive: true });
     
+    const trashPath = path.join(libPath, '.trash');
+    
     const entries = await fs.readdir(assetsPath);
     const items = [];
     
@@ -624,6 +626,23 @@ ipcMain.handle('read-state', async () => {
         }
         items.push(metadata);
       } catch {}
+    }
+    
+    let catalog = { cards: [], trash: [] };
+    const catalogPath = path.join(libPath, 'card-catalog.json');
+    try {
+      const catalogData = await fs.readFile(catalogPath, 'utf-8');
+      catalog = JSON.parse(catalogData);
+    } catch {
+      catalog = { cards: items.map(i => i.assetId), trash: [] };
+      await fs.writeFile(catalogPath, JSON.stringify(catalog, null, 2));
+    }
+    
+    const currentCardIds = items.map(i => i.assetId);
+    const missingFromCatalog = currentCardIds.filter(id => !catalog.cards.includes(id));
+    if (missingFromCatalog.length > 0) {
+      catalog.cards = [...catalog.cards, ...missingFromCatalog];
+      await fs.writeFile(catalogPath, JSON.stringify(catalog, null, 2));
     }
     
     return { version: 1, zoom: 1, panX: 0, panY: 0, items };
@@ -695,16 +714,30 @@ ipcMain.handle('delete-item-state', async (event, assetId) => {
     try {
       await fs.access(assetDir);
       await fs.mkdir(trashPath, { recursive: true });
-      const trashItemPath = path.join(trashPath, assetId);
+      
+      let trashItemPath = path.join(trashPath, assetId);
       let counter = 1;
       while (await fs.access(trashItemPath).then(() => true).catch(() => false)) {
-        await fs.rename(trashItemPath, path.join(trashPath, `${assetId}_${counter}`));
+        trashItemPath = path.join(trashPath, `${assetId}_${counter}`);
         counter++;
       }
       await fs.rename(assetDir, trashItemPath);
     } catch {}
 
     await removeFromCatalog(libPath, assetId);
+    
+    let catalog = { cards: [], trash: [] };
+    const catalogPath = path.join(libPath, 'card-catalog.json');
+    try {
+      const catalogData = await fs.readFile(catalogPath, 'utf-8');
+      catalog = JSON.parse(catalogData);
+    } catch {}
+    if (!catalog.trash) catalog.trash = [];
+    if (!catalog.trash.includes(assetId)) {
+      catalog.trash.push(assetId);
+    }
+    catalog.cards = catalog.cards.filter(id => id !== assetId);
+    await fs.writeFile(catalogPath, JSON.stringify(catalog, null, 2));
   } catch (err) {
     console.error('delete-item-state error:', err);
   }
