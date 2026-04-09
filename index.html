@@ -1478,6 +1478,7 @@
   <div id="todoPanel">
     <div class="panel-header">
       <h3>待办列表</h3>
+      <button class="settings-close" onclick="createEmptyCard()" title="新建卡片" style="width:24px;height:24px;font-size:14px;">+</button>
     </div>
     <input type="text" id="todoSearch" placeholder="搜索...">
     <label style="display:flex;align-items:center;padding:8px 12px;font-size:12px;color:#999;">
@@ -1984,8 +1985,8 @@
             for (const file of files) {
               const arrayBuffer = await file.arrayBuffer();
               const buffer = new Uint8Array(arrayBuffer);
-              const assetResult = await window.whiteboardAPI.addAsset(Array.from(buffer), file.name, item.id);
-              await window.whiteboardAPI.attachAssetToCard(item.id, assetResult.assetId);
+              const assetResult = await window.whiteboardAPI.addAsset(Array.from(buffer), file.name, item.assetId);
+              await window.whiteboardAPI.attachAssetToCard(item.assetId, assetResult.assetId);
               if (!item.attachments) item.attachments = [];
               item.attachments.push(assetResult.assetId);
               if (!item.thumbnailAssetId) {
@@ -2954,29 +2955,51 @@
       }
     }
 
-    async function testClipboard() {
-      try {
-        const filesData = await window.whiteboardAPI.readClipboardFiles();
-        if (filesData && filesData.length > 0) {
-          for (const fileData of filesData) {
-            const buffer = Uint8Array.from(atob(fileData.buffer), c => c.charCodeAt(0));
-            await addFileFromBuffer(buffer, fileData.filename);
-          }
-          return;
-        }
+     async function testClipboard() {
+       try {
+         const filesData = await window.whiteboardAPI.readClipboardFiles();
+         if (filesData && filesData.length > 0) {
+           for (const fileData of filesData) {
+             try {
+                 const bufferStr = atob(fileData.buffer);
+                 const buffer = Uint8Array.from(bufferStr, c => c.charCodeAt(0));
+                 await addFileFromBuffer(buffer, fileData.filename);
+             } catch (decodeErr) {
+                 console.error('Failed to decode clipboard file data:', decodeErr);
+                 // 如果是二进制数据，尝试直接处理
+                 if (fileData.buffer instanceof ArrayBuffer) {
+                     await addFileFromBuffer(new Uint8Array(fileData.buffer), fileData.filename);
+                 } else {
+                     alert('无法处理剪切板文件数据');
+                 }
+             }
+           }
+           return;
+         }
 
-        const clipboardData = await window.whiteboardAPI.readClipboardImage();
-        if (clipboardData && clipboardData.buffer) {
-          const buffer = Uint8Array.from(atob(clipboardData.buffer), c => c.charCodeAt(0));
-          await addFileFromBuffer(buffer, clipboardData.filename);
-          return;
-        }
+         const clipboardData = await window.whiteboardAPI.readClipboardImage();
+         if (clipboardData && clipboardData.buffer) {
+           try {
+               const bufferStr = atob(clipboardData.buffer);
+               const buffer = Uint8Array.from(bufferStr, c => c.charCodeAt(0));
+               await addFileFromBuffer(buffer, clipboardData.filename);
+           } catch (decodeErr) {
+               console.error('Failed to decode clipboard image data:', decodeErr);
+               // 如果是二进制数据，尝试直接处理
+               if (clipboardData.buffer instanceof ArrayBuffer) {
+                   await addFileFromBuffer(new Uint8Array(clipboardData.buffer), clipboardData.filename);
+               } else {
+                   alert('无法处理剪切板图片数据');
+               }
+           }
+           return;
+         }
 
-        alert('剪贴板为空，请先复制图片或文件');
-      } catch (err) {
-        alert('错误: ' + err.message);
-      }
-    }
+         alert('剪贴板为空，请先复制图片或文件');
+       } catch (err) {
+         alert('错误: ' + err.message);
+       }
+     }
 
     async function addFile() {
       if (!hasLibrary) {
@@ -3000,7 +3023,7 @@
       const ext = filename.split('.').pop().toLowerCase();
       const isImage = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'].includes(ext);
 
-      const assetResult = await window.whiteboardAPI.addAsset(Array.from(buffer), filename);
+      const assetResult = await window.whiteboardAPI.addAsset(Array.from(buffer), filename, targetCardId);
 
       let newItem;
       let container;
@@ -3009,7 +3032,7 @@
       if (targetCardId) {
         const card = items.find(i => i.id === targetCardId || i.assetId === targetCardId);
         if (card) {
-          await window.whiteboardAPI.attachAssetToCard(targetCardId, assetResult.assetId);
+          await window.whiteboardAPI.attachAssetToCard(card.assetId, assetResult.assetId);
           card.attachments.push(assetResult.assetId);
           if (!card.thumbnailAssetId) {
             card.thumbnailAssetId = assetResult.assetId;
@@ -3253,165 +3276,8 @@
           for (const file of files) {
             const arrayBuffer = await file.arrayBuffer();
             const buffer = new Uint8Array(arrayBuffer);
-            const assetResult = await window.whiteboardAPI.addAsset(Array.from(buffer), file.name);
-            await window.whiteboardAPI.attachAssetToCard(item.id, assetResult.assetId);
-            if (!item.attachments) item.attachments = [];
-            item.attachments.push(assetResult.assetId);
-            if (!item.thumbnailAssetId) {
-              item.thumbnailAssetId = assetResult.assetId;
-            }
-          }
-          scheduleSave();
-          refreshWhiteboardItem(item);
-        }
-      });
-
-      return container;
-    }
-
-    function createFileContainer(id, item) {
-      const container = document.createElement('div');
-      container.className = 'file-item';
-      container.dataset.id = item.id;
-      container.dataset.assetId = item.assetId || item.id;
-      container.dataset.itemId = item.id;
-      container.style.zIndex = zIndex++;
-      container.style.display = 'flex';
-      container.style.flexDirection = 'column';
-      container.style.overflow = 'hidden';
-
-      const topBar = document.createElement('div');
-      topBar.className = 'card-top-bar';
-      topBar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:rgba(0,0,0,0.4);flex-shrink:0;';
-
-      const titleSpan = document.createElement('span');
-      titleSpan.className = 'card-title';
-      titleSpan.textContent = item.cardName || item.originalName || '未命名';
-      titleSpan.style.cssText = 'color:#fff;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100px;';
-
-      const checkBtn = document.createElement('button');
-      checkBtn.className = 'check-btn';
-      checkBtn.textContent = item.archived ? '\u2611' : '\u2610';
-      checkBtn.title = '标记完成';
-      checkBtn.style.cssText = 'width:20px;height:20px;border:none;background:transparent;cursor:pointer;font-size:14px;color:#fff;';
-      checkBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        toggleArchive(item.assetId || item.id);
-      });
-
-      topBar.appendChild(titleSpan);
-      topBar.appendChild(checkBtn);
-      container.appendChild(topBar);
-
-      const thumbWrapper = document.createElement('div');
-      thumbWrapper.className = 'file-thumb-wrapper';
-      thumbWrapper.style.flex = '1';
-      thumbWrapper.style.minHeight = '0';
-      thumbWrapper.style.display = 'flex';
-      thumbWrapper.style.alignItems = 'center';
-      thumbWrapper.style.justifyContent = 'center';
-      thumbWrapper.style.overflow = 'hidden';
-
-      const thumbAssetId = item.thumbnailAssetId || item.assetId;
-      const loadFileContent = async () => {
-        if (thumbAssetId) {
-          const thumbUrl = await window.whiteboardAPI.getAssetThumbnail(thumbAssetId);
-          if (thumbUrl) {
-            const img = document.createElement('img');
-            img.className = 'file-thumb';
-            img.style.maxWidth = '100%';
-            img.style.maxHeight = '100%';
-            img.style.objectFit = 'contain';
-            img.style.pointerEvents = 'none';
-            thumbWrapper.appendChild(img);
-            img.src = thumbUrl;
-          } else {
-            const iconDiv = document.createElement('div');
-            iconDiv.className = 'icon';
-            iconDiv.style.fontSize = '48px';
-            iconDiv.textContent = getIconForFile(item.originalName);
-            thumbWrapper.appendChild(iconDiv);
-          }
-        } else {
-          const iconDiv = document.createElement('div');
-          iconDiv.className = 'icon';
-          iconDiv.style.fontSize = '48px';
-          iconDiv.textContent = getIconForFile(item.originalName);
-          thumbWrapper.appendChild(iconDiv);
-        }
-      };
-      loadFileContent();
-
-      container.appendChild(thumbWrapper);
-
-      if (item.archived) {
-        container.style.opacity = '0.3';
-        container.style.filter = 'grayscale(100%)';
-      }
-
-      const bottomBar = document.createElement('div');
-      bottomBar.className = 'card-bottom-bar';
-      bottomBar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:rgba(0,0,0,0.4);flex-shrink:0;';
-
-      const timerDisplay = document.createElement('span');
-      timerDisplay.className = 'timer-display';
-      timerDisplay.textContent = '00:00:00';
-
-      const timerBtn = document.createElement('button');
-      timerBtn.className = 'timer-btn';
-      timerBtn.textContent = '\u25B6';
-      timerBtn.style.cssText = 'width:20px;height:20px;border:none;background:rgba(255,255,255,0.2);border-radius:50%;cursor:pointer;font-size:10px;color:#fff;';
-      timerBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        toggleTimer(item.assetId || item.id);
-      });
-
-      bottomBar.appendChild(timerDisplay);
-      bottomBar.appendChild(timerBtn);
-      container.appendChild(bottomBar);
-
-      const handles = ['nw', 'ne', 'sw', 'se'];
-      handles.forEach(pos => {
-        const handle = document.createElement('div');
-        handle.className = `resize-handle ${pos}`;
-        handle.dataset.pos = pos;
-        container.appendChild(handle);
-      });
-
-      container.addEventListener('mousedown', onMouseDown);
-      container.addEventListener('dblclick', async () => {
-        if (thumbAssetId) {
-          await window.whiteboardAPI.openFile(thumbAssetId);
-        }
-      });
-      container.addEventListener('contextmenu', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        selectItem(container);
-        window.whiteboardAPI.showCardContextMenu({
-          id: item.id,
-          assetId: item.assetId || item.id,
-          originalName: item.originalName || '',
-          itemType: 'file'
-        });
-      });
-
-      container.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        e.dataTransfer.dropEffect = 'copy';
-      });
-
-      container.addEventListener('drop', async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const files = e.dataTransfer.files;
-        if (files && files.length > 0) {
-          for (const file of files) {
-            const arrayBuffer = await file.arrayBuffer();
-            const buffer = new Uint8Array(arrayBuffer);
-            const assetResult = await window.whiteboardAPI.addAsset(Array.from(buffer), file.name);
-            await window.whiteboardAPI.attachAssetToCard(item.id, assetResult.assetId);
+            const assetResult = await window.whiteboardAPI.addAsset(Array.from(buffer), file.name, item.assetId);
+            await window.whiteboardAPI.attachAssetToCard(item.assetId, assetResult.assetId);
             if (!item.attachments) item.attachments = [];
             item.attachments.push(assetResult.assetId);
             if (!item.thumbnailAssetId) {
@@ -3538,8 +3404,8 @@
           for (const file of files) {
             const arrayBuffer = await file.arrayBuffer();
             const buffer = new Uint8Array(arrayBuffer);
-            const assetResult = await window.whiteboardAPI.addAsset(Array.from(buffer), file.name);
-            await window.whiteboardAPI.attachAssetToCard(item.id, assetResult.assetId);
+            const assetResult = await window.whiteboardAPI.addAsset(Array.from(buffer), file.name, item.assetId);
+            await window.whiteboardAPI.attachAssetToCard(item.assetId, assetResult.assetId);
             item.attachments.push(assetResult.assetId);
             if (!item.thumbnailAssetId) {
               item.thumbnailAssetId = assetResult.assetId;
@@ -3857,7 +3723,6 @@
       
       clearSelection();
       updateItemCount();
-      scheduleSave();
     }
 
     function clearAll() {
@@ -3873,7 +3738,6 @@
       items = [];
       selectedItem = null;
       updateItemCount();
-      scheduleSave();
     }
 
     function zoomIn() {
@@ -4022,52 +3886,84 @@
 
       const hasSelection = selectedItem !== null;
 
-      if (hasSelection) {
-        const selectedId = selectedItem.dataset.itemId || selectedItem.dataset.id;
-        const item = items.find(i => i.id === selectedId || i.assetId === selectedId);
-        
-        if (item) {
-          try {
-            const filesData = await window.whiteboardAPI.readClipboardFiles();
-            if (filesData && filesData.length > 0) {
-              for (const fileData of filesData) {
-                const buffer = Uint8Array.from(atob(fileData.buffer), c => c.charCodeAt(0));
-                const assetResult = await window.whiteboardAPI.addAsset(Array.from(buffer), fileData.filename);
-                await window.whiteboardAPI.attachAssetToCard(item.id, assetResult.assetId);
-                if (!item.attachments) item.attachments = [];
-                item.attachments.push(assetResult.assetId);
-                if (!item.thumbnailAssetId) {
-                  item.thumbnailAssetId = assetResult.assetId;
-                }
-              }
-              scheduleSave();
-              refreshWhiteboardItem(item);
-              return;
-            }
-          } catch (err) {
-            console.error('readClipboardFiles error:', err);
-          }
-
-          try {
-            const clipboardData = await window.whiteboardAPI.readClipboardImage();
-            if (clipboardData && clipboardData.buffer) {
-              const buffer = Uint8Array.from(atob(clipboardData.buffer), c => c.charCodeAt(0));
-              const assetResult = await window.whiteboardAPI.addAsset(Array.from(buffer), clipboardData.filename);
-              await window.whiteboardAPI.attachAssetToCard(item.id, assetResult.assetId);
-              if (!item.attachments) item.attachments = [];
-              item.attachments.push(assetResult.assetId);
-              if (!item.thumbnailAssetId) {
-                item.thumbnailAssetId = assetResult.assetId;
-              }
-              scheduleSave();
-              refreshWhiteboardItem(item);
-              return;
-            }
-          } catch (err) {
-            console.error('readClipboardImage error:', err);
-          }
-        }
-      }
+         if (hasSelection) {
+           const selectedId = selectedItem.dataset.itemId || selectedItem.dataset.id;
+           const item = items.find(i => i.id === selectedId || i.assetId === selectedId);
+           
+           if (item) {
+             try {
+               const filesData = await window.whiteboardAPI.readClipboardFiles();
+               if (filesData && filesData.length > 0) {
+                 for (const fileData of filesData) {
+                   try {
+                     let buffer;
+                     if (typeof fileData.buffer === 'string') {
+                       const bufferStr = atob(fileData.buffer);
+                       buffer = Uint8Array.from(bufferStr, c => c.charCodeAt(0));
+                     } else if (fileData.buffer instanceof ArrayBuffer) {
+                       buffer = new Uint8Array(fileData.buffer);
+                     } else {
+                       buffer = Uint8Array.from(fileData.buffer);
+                     }
+                     const assetResult = await window.whiteboardAPI.addAsset(Array.from(buffer), fileData.filename, item.assetId);
+                     await window.whiteboardAPI.attachAssetToCard(item.assetId, assetResult.assetId);
+                     if (!item.attachments) item.attachments = [];
+                     item.attachments.push(assetResult.assetId);
+                     if (!item.thumbnailAssetId) {
+                       item.thumbnailAssetId = assetResult.assetId;
+                     }
+                   } catch (decodeErr) {
+                     console.error('Failed to decode clipboard file data:', decodeErr);
+                     alert('无法处理剪切板文件数据: ' + fileData.filename);
+                     continue;
+                   }
+                 }
+                 scheduleSave();
+                 refreshWhiteboardItem(item);
+                 return;
+               }
+             } catch (err) {
+               console.error('readClipboardFiles error:', err);
+             }
+ 
+             try {
+               const clipboardData = await window.whiteboardAPI.readClipboardImage();
+               if (clipboardData && clipboardData.buffer) {
+                 try {
+                   let buffer;
+                   if (typeof clipboardData.buffer === 'string') {
+                     const bufferStr = atob(clipboardData.buffer);
+                     buffer = Uint8Array.from(bufferStr, c => c.charCodeAt(0));
+                   } else if (clipboardData.buffer instanceof ArrayBuffer) {
+                     buffer = new Uint8Array(clipboardData.buffer);
+                   } else {
+                     buffer = Uint8Array.from(clipboardData.buffer);
+                   }
+                   const assetResult = await window.whiteboardAPI.addAsset(Array.from(buffer), clipboardData.filename, item.assetId);
+                   await window.whiteboardAPI.attachAssetToCard(item.assetId, assetResult.assetId);
+                   if (!item.attachments) item.attachments = [];
+                   item.attachments.push(assetResult.assetId);
+                   if (!item.thumbnailAssetId) {
+                     item.thumbnailAssetId = assetResult.assetId;
+                   }
+                   const img = contentArea.querySelector('img');
+                   if (img) {
+                     const thumbUrl = await window.whiteboardAPI.getAssetThumbnail(assetResult.assetId);
+                     if (thumbUrl) img.src = thumbUrl;
+                   }
+                 } catch (decodeErr) {
+                   console.error('Failed to decode clipboard image data:', decodeErr);
+                   alert('无法处理剪切板图片数据');
+                 }
+                 scheduleSave();
+                 refreshWhiteboardItem(item);
+                 return;
+               }
+             } catch (err) {
+               console.error('readClipboardImage error:', err);
+             }
+           }
+         }
 
       try {
         const filesData = await window.whiteboardAPI.readClipboardFiles();

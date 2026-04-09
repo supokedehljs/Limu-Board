@@ -4,7 +4,20 @@ contextBridge.exposeInMainWorld('whiteboardAPI', {
   getDataPath: () => ipcRenderer.invoke('get-data-path'),
   ensureDataDir: () => ipcRenderer.invoke('ensure-data-dir'),
   hasActiveLibrary: () => ipcRenderer.invoke('has-active-library'),
-  addAsset: (buffer, filename, cardId) => ipcRenderer.invoke('add-asset', { buffer, filename, cardId }),
+  addAsset: (buffer, filename, cardId) => {
+    // 将 ArrayBuffer 或 Uint8Array 转换为普通数组，以便正确通过 IPC 传输
+    let bufferArray;
+    if (buffer instanceof ArrayBuffer) {
+      bufferArray = Array.from(new Uint8Array(buffer));
+    } else if (buffer instanceof Uint8Array) {
+      bufferArray = Array.from(buffer);
+    } else if (Array.isArray(buffer)) {
+      bufferArray = buffer;
+    } else {
+      bufferArray = [];
+    }
+    return ipcRenderer.invoke('add-asset', { buffer: bufferArray, filename, cardId });
+  },
   getAsset: (assetId) => ipcRenderer.invoke('get-asset', assetId),
   getAssetThumbnail: (assetId) => ipcRenderer.invoke('get-asset-thumbnail', assetId),
   saveFile: (buffer, filename) => ipcRenderer.invoke('save-file', { buffer, filename }),

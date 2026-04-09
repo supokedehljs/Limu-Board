@@ -306,16 +306,36 @@ ipcMain.handle('add-asset', async (event, { buffer, filename, cardId }) => {
     
     let assetDir;
     if (cardId) {
-      assetDir = path.join(assetsPath, cardId, assetId);
+      assetDir = path.join(assetsPath, cardId);
     } else {
       assetDir = path.join(assetsPath, assetId);
     }
     await fs.mkdir(assetDir, { recursive: true });
 
     const ext = path.extname(filename).toLowerCase();
-    const savedName = `original${ext}`;
-    const filePath = path.join(assetDir, savedName);
-    await fs.writeFile(filePath, Buffer.from(buffer));
+    let savedName = `original${ext}`;
+    let finalPath = path.join(assetDir, savedName);
+    
+    let counter = 1;
+    while (await fs.access(finalPath).then(() => true).catch(() => false)) {
+      savedName = `original_${counter}${ext}`;
+      finalPath = path.join(assetDir, savedName);
+      counter++;
+    }
+    
+    // 确保 buffer 是正确的格式
+    let fileBuffer;
+    if (Array.isArray(buffer)) {
+      fileBuffer = Buffer.from(buffer);
+    } else if (Buffer.isBuffer(buffer)) {
+      fileBuffer = buffer;
+    } else if (buffer && typeof buffer === 'object' && 'data' in buffer) {
+      // 处理 Electron 序列化后的 TypedArray
+      fileBuffer = Buffer.from(buffer.data);
+    } else {
+      throw new Error('Invalid buffer format');
+    }
+    await fs.writeFile(finalPath, fileBuffer);
 
     let width = 0, height = 0;
     const imageExts = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'];
