@@ -6,7 +6,7 @@ contextBridge.exposeInMainWorld('whiteboardAPI', {
   hasActiveLibrary: () => ipcRenderer.invoke('has-active-library'),
   addAsset: (buffer, filename, cardId) => ipcRenderer.invoke('add-asset', { buffer, filename, cardId }),
   getAsset: (assetId) => ipcRenderer.invoke('get-asset', assetId),
-  getAssetThumbnail: (assetId) => ipcRenderer.invoke('get-asset-thumbnail', assetId),
+  getAssetThumbnail: (assetId, cardId) => ipcRenderer.invoke('get-asset-thumbnail', assetId, cardId),
   saveFile: (buffer, filename) => ipcRenderer.invoke('save-file', { buffer, filename }),
   readState: () => ipcRenderer.invoke('read-state'),
   writeState: (state) => ipcRenderer.invoke('write-state', state),

@@ -2056,7 +2056,7 @@
       galleryEl.innerHTML = '';
 
       for (const assetId of imageFiles) {
-        const thumbUrl = await window.whiteboardAPI.getAssetThumbnail(assetId);
+        const thumbUrl = await window.whiteboardAPI.getAssetThumbnail(assetId, item.assetId);
         const isThumb = item.thumbnailAssetId === assetId;
 
         const el = document.createElement('div');
@@ -2199,9 +2199,15 @@
     }
 
     async function updateCardContent(item, contentArea) {
-      const thumbAssetId = item.thumbnailAssetId || item.attachments?.[0];
+      const imageExts = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'];
+      const imageAttachments = (item.attachments || []).filter(a => {
+        const ext = '.' + a.split('.').pop();
+        return imageExts.includes(ext.toLowerCase());
+      });
+      
+      const thumbAssetId = item.thumbnailAssetId || imageAttachments[0];
       if (thumbAssetId) {
-        const thumbUrl = await window.whiteboardAPI.getAssetThumbnail(thumbAssetId);
+        const thumbUrl = await window.whiteboardAPI.getAssetThumbnail(thumbAssetId, item.assetId);
         if (thumbUrl) {
           contentArea.innerHTML = '';
           contentArea.style.padding = '0';
@@ -2211,16 +2217,6 @@
           img.style.objectFit = 'contain';
           img.src = thumbUrl;
           contentArea.appendChild(img);
-          return;
-        }
-      }
-      if (item.attachments && item.attachments.length > 0) {
-        const attachmentIds = item.attachments.slice(1);
-        if (attachmentIds.length > 0) {
-          contentArea.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;align-items:center;">
-            ${attachmentIds.map(a => `<div style="padding:4px 8px;background:#444;border-radius:4px;font-size:10px;color:#aaa;">附件</div>`).join('')}
-          </div>`;
-          contentArea.style.padding = '12px';
           return;
         }
       }

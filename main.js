@@ -403,25 +403,51 @@ ipcMain.handle('get-asset', async (event, assetId) => {
   }
 });
 
-ipcMain.handle('get-asset-thumbnail', async (event, assetId) => {
+ipcMain.handle('get-asset-thumbnail', async (event, assetId, cardId) => {
   try {
     const assetsPath = await getAssetsPath();
     let assetDir = path.join(assetsPath, assetId);
     let found = false;
+    let originalFile = null;
     
     try {
       await fs.access(assetDir);
       found = true;
+      const entries = await fs.readdir(assetDir);
+      originalFile = entries.find(f => f.startsWith('original')) || entries.find(f => {
+        const ext = path.extname(f).toLowerCase();
+        return ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'].includes(ext);
+      });
     } catch {
-      const entries = await fs.readdir(assetsPath);
-      for (const entry of entries) {
-        const attachmentPath = path.join(assetsPath, entry, assetId);
+      if (cardId) {
+        const cardDir = path.join(assetsPath, cardId);
+        const cardFilePath = path.join(cardDir, assetId);
         try {
-          await fs.access(attachmentPath);
-          assetDir = attachmentPath;
+          await fs.access(cardFilePath);
+          assetDir = cardFilePath;
           found = true;
-          break;
+          const ext = path.extname(assetId).toLowerCase();
+          if (['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'].includes(ext)) {
+            originalFile = assetId;
+          }
         } catch {}
+      }
+      if (!found) {
+        const entries = await fs.readdir(assetsPath);
+        for (const entry of entries) {
+          const attachmentPath = path.join(assetsPath, entry, assetId);
+          try {
+            await fs.access(attachmentPath);
+            assetDir = attachmentPath;
+            found = true;
+            const entryFiles = await fs.readdir(assetDir);
+            originalFile = entryFiles.find(f => f.startsWith('original')) || entryFiles.find(f => {
+              const ext = path.extname(f).toLowerCase();
+              return ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'].includes(ext);
+            });
+            break;
+          } catch {}
+        }
       }
     }
     
@@ -434,8 +460,6 @@ ipcMain.handle('get-asset-thumbnail', async (event, assetId) => {
       return `data:image/png;base64,${buffer.toString('base64')}`;
     } catch {}
 
-    const entries = await fs.readdir(assetDir);
-    const originalFile = entries.find(f => f.startsWith('original'));
     if (!originalFile) return null;
 
     const ext = path.extname(originalFile).toLowerCase();
@@ -1237,7 +1261,10 @@ async function getAssetThumbnail(assetId) {
       await fs.access(assetDir);
       found = true;
       const entries = await fs.readdir(assetDir);
-      originalFile = entries.find(f => f.startsWith('original'));
+      originalFile = entries.find(f => f.startsWith('original')) || entries.find(f => {
+        const ext = path.extname(f).toLowerCase();
+        return ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'].includes(ext);
+      });
     } catch {
       const entries = await fs.readdir(assetsPath);
       for (const entry of entries) {
@@ -1247,7 +1274,10 @@ async function getAssetThumbnail(assetId) {
           assetDir = attachmentPath;
           found = true;
           const entryFiles = await fs.readdir(assetDir);
-          originalFile = entryFiles.find(f => f.startsWith('original'));
+          originalFile = entryFiles.find(f => f.startsWith('original')) || entryFiles.find(f => {
+            const ext = path.extname(f).toLowerCase();
+            return ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'].includes(ext);
+          });
           break;
         } catch {}
       }
